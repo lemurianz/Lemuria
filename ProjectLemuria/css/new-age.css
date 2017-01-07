@@ -1,6 +1,6 @@
 /*!
  * Start Bootstrap - New Age v3.3.7 (http://startbootstrap.com/template-overviews/new-age)
- * Copyright 2013-2016 Start Bootstrap
+ * Copyright 2013-2017 Start Bootstrap
  * Licensed under MIT (https://github.com/BlackrockDigital/startbootstrap/blob/gh-pages/LICENSE)
  */
 .heading-font {
@@ -232,17 +232,18 @@ section.download h2 {
   margin-top: 0;
   font-size: 50px;
 }
-    section.download i {
-        color: #fff;
-        font-size: 50px;
-    }
-    section.download a:hover, a:focus {
-        color: #fff;
-    }
+section.download i {
+  color: #fff;
+  font-size: 50px;
+}
+section.download a:hover,
+section.download a:focus {
+  color: #fff;
+}
 section.download .badges .badge-link {
-            display: inline-block;
-            margin-left:10px;
-            margin-right:10px;
+  display: inline-block;
+  margin-left: 10px;
+  margin-right: 10px;
   margin-bottom: 25px;
 }
 section.download .badges .badge-link:last-child {
