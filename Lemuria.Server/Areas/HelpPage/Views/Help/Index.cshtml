@@ -1,0 +1,37 @@
+@using System.Web.Http
+@using System.Web.Http.Controllers
+@using System.Web.Http.Description
+@using System.Collections.ObjectModel
+@using Lemuria.Server.Areas.HelpPage.Models
+@model Collection<ApiDescription>
+
+@{
+    // Group APIs by controller
+    ILookup<HttpControllerDescriptor, ApiDescription> apiGroups = Model.ToLookup(api => api.ActionDescriptor.ControllerDescriptor);
+}
+
+@*<link type="text/css" href="~/Areas/HelpPage/HelpPage.css" rel="stylesheet" />*@
+
+@Html.Partial("~/Areas/HelpPage/Views/Help/_Menu.cshtml", apiGroups.Select(m => m.Key).ToList())
+
+
+<section id="introduction" class="download bg-primary text-center">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8 col-md-offset-2">
+                <h2 class="section-heading">Introduction</h2>
+                <p>Provide a general description of your APIs here.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+@foreach (var group in apiGroups)
+{
+    <section id="@group.Key.ControllerName" class="features" style="padding-left:20px; padding-right:20px;">
+        @Html.DisplayFor(m => group, "ApiGroup")
+    </section>
+}
+
+
+

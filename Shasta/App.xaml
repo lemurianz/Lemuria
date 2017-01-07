@@ -1,0 +1,11 @@
+﻿<Application
+    x:Class="Shasta.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Shasta"
+    xmlns:models="using:Shasta.ViewModels"
+    RequestedTheme="Light">
+    <Application.Resources>
+        <models:WhiteListedViewModels x:Key="WhiteListedViewModels"/>
+    </Application.Resources>
+</Application>

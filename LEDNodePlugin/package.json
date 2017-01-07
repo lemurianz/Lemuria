@@ -1,0 +1,10 @@
+{
+  "name": "lednode-plugin",
+  "version": "0.0.0",
+  "description": "LEDNodePlugin",
+  "main": "app.js",
+  "author": {
+    "name": "Vivek"
+  },
+  "dependencies": {}
+}
