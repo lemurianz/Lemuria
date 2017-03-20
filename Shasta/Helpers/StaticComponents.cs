@@ -10,15 +10,31 @@ using Windows.UI.Xaml.Media;
 
 namespace Shasta.Helpers
 {
+    class LemuriaSettings
+    {
+        // Motor Driver
+        public int MaxMotorASpeed { get; set; }
+        public int MaxMotorBSpeed { get; set; }
+        // Floor Detection
+        public bool InfraSensor1 { get; set; }
+        public bool InfraSensor2 { get; set; }
+        public bool InfraSensor3 { get; set; }
+        public bool InfraSensor4 { get; set; }
+        // Object Avoidance
+        public bool SonarSensor { get; set; }
+        // Temperature
+        public bool TemperatureSensor { get; set; }
+    }
+
     class StaticComponents
     {
         // Motor pins
-        public const int ENABLE_L293D_MOTOR_SPEED = 13;
-        public const int MOTOR_DIRECTION_FORWARD = 5;
-        public const int MOTOR_DIRECTION_BACKWARD = 6;
-        public const int ENABLE_L293D_MOTOR_TURN = 12;
-        public const int MOTOR_TURN_LEFT = 22;
-        public const int MOTOR_TURN_RIGHT = 27;
+        public const int ENABLE_L293D_MOTOR_SPEED_A = 13;
+        public const int MOTOR_DIRECTION_FORWARD_A = 5;
+        public const int MOTOR_DIRECTION_BACKWARD_A = 6;
+        public const int ENABLE_L293D_MOTOR_SPEED_B = 12;
+        public const int MOTOR_DIRECTION_FORWARD_B = 22;
+        public const int MOTOR_DIRECTION_BACKWARD_B = 27;
         public const int SONAR_TRIGGER = 23;
         public const int SONAR_ECHO = 24;
         public const int INFRA_1 = 4;
@@ -28,14 +44,14 @@ namespace Shasta.Helpers
         public const int TEMPERATURE_HUMIDITY = 16;
 
         // PWM
-        public static PwmPin speedPin { get; set; }
-        public static PwmPin turnPin { get; set; }
+        public static PwmPin speedAPin { get; set; }
+        public static PwmPin speedBPin { get; set; }
 
         // GPIO
-        public static GpioPin directionForwardPin { get; set; }
-        public static GpioPin directionBackwardPin { get; set; }
-        public static GpioPin turnLeftPin { get; set; }
-        public static GpioPin turnRightPin { get; set; }
+        public static GpioPin directionForwardAPin { get; set; }
+        public static GpioPin directionBackwardAPin { get; set; }
+        public static GpioPin directionForwardBPin { get; set; }
+        public static GpioPin directionBackwardBPin { get; set; }
         public static GpioPin triggerPin { get; set; }
         public static GpioPin echoPin { get; set; }
         public static GpioPin infra1Pin { get; set; }
@@ -50,7 +66,10 @@ namespace Shasta.Helpers
 
         // Lemuria Hub
         public static bool IsLemuriaHubConnected { get; set; }
-        public static string LocalWifiHub = "http://192.168.0.53:52232/";
+        public static string LocalWifiHub = "http://192.168.0.57:52232/";
+        public static bool IsAuthorised { get; set; }
+        public static string UserName { get; set; }
+        public static LemuriaSettings LemuriaSettings { get; set; }
 
         // Timer
         public static  Stopwatch StopWatch = new Stopwatch();

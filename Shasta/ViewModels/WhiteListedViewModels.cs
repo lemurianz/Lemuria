@@ -9,7 +9,7 @@ using Windows.UI.Xaml.Media.Imaging;
 
 namespace Shasta.ViewModels
 {
-    class WhiteListedViewModels
+    public class WhiteListedViewModels
     {
         public static ObservableCollection<Visitor> WhitelistedVisitors { get; set; }
 
@@ -27,7 +27,7 @@ namespace Shasta.ViewModels
                 (
                     name: unisexNames[pictureCounter -1],
                     imageFolder: null,
-                    image: new BitmapImage(new Uri("ms-appx://Shasta/Assets/" + pictureCounter.ToString() + ".png"))
+                    image: new BitmapImage(new Uri("ms-appx://Shasta/Assets/People/" + pictureCounter.ToString() + ".png"))
                 ));
 
                 pictureCounter++;
@@ -38,11 +38,6 @@ namespace Shasta.ViewModels
         {
             WhitelistedVisitors = new ObservableCollection<Visitor>();
             AddItems(5);
-        }
-
-        public static void RemoveAllItems()
-        {
-            WhitelistedVisitors.Clear();
         }
     }
 }

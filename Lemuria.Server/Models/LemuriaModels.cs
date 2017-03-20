@@ -12,5 +12,6 @@ namespace Lemuria.Server.Models
         public string LRTag { get; set; }
         public int DirectionSpeed { get; set; }
         public int TurnSpeed { get; set; }
+        public int MyProperty { get; set; }
     }
 }

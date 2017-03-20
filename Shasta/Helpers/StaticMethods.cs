@@ -10,41 +10,41 @@ namespace Shasta.Helpers
     class StaticMethods
     {
         // Move
-        public static void enableInput(bool forward, bool backward, bool option)
+        public static void enableMotorA(bool forwardA, bool backwardA, bool option)
         {
-            if (forward)
+            if (forwardA)
             {
                 if (option)
-                    StaticComponents.directionForwardPin.Write(GpioPinValue.High);
+                    StaticComponents.directionForwardAPin.Write(GpioPinValue.High);
                 else
-                    StaticComponents.directionForwardPin.Write(GpioPinValue.Low);
+                    StaticComponents.directionForwardAPin.Write(GpioPinValue.Low);
             }
 
-            if (backward)
+            if (backwardA)
             {
                 if (option)
-                    StaticComponents.directionBackwardPin.Write(GpioPinValue.High);
+                    StaticComponents.directionBackwardAPin.Write(GpioPinValue.High);
                 else
-                    StaticComponents.directionBackwardPin.Write(GpioPinValue.Low);
+                    StaticComponents.directionBackwardAPin.Write(GpioPinValue.Low);
             }
         }
 
-        public static void enableTurn(bool left, bool right, bool option)
+        public static void enableMotorB(bool forwardB, bool backwardB, bool option)
         {
-            if (right)
+            if (forwardB)
             {
                 if (option)
-                    StaticComponents.turnLeftPin.Write(GpioPinValue.High);
+                    StaticComponents.directionForwardBPin.Write(GpioPinValue.High);
                 else
-                    StaticComponents.turnLeftPin.Write(GpioPinValue.Low);
+                    StaticComponents.directionForwardBPin.Write(GpioPinValue.Low);
             }
 
-            if (left)
+            if (backwardB)
             {
                 if (option)
-                    StaticComponents.turnRightPin.Write(GpioPinValue.High);
+                    StaticComponents.directionBackwardBPin.Write(GpioPinValue.High);
                 else
-                    StaticComponents.turnRightPin.Write(GpioPinValue.Low);
+                    StaticComponents.directionBackwardBPin.Write(GpioPinValue.Low);
             }
         }
 

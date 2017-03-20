@@ -3,7 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:Shasta"
-    xmlns:models="using:Shasta.Facial_Recognition"
+    xmlns:facialrecognitionmodels="using:Shasta.Facial_Recognition"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
@@ -126,17 +126,17 @@
                                 <ColumnDefinition Width="*"></ColumnDefinition>
                             </Grid.ColumnDefinitions>
                             <StackPanel Margin="0,0,10,0">
-                                <Slider x:Name="motorSpeed" ValueChanged="motorSpeed_ValueChanged"  Minimum="0" Maximum="100" MinWidth="200"/>
+                                <Slider x:Name="motorASpeed" ValueChanged="motorASpeed_ValueChanged"  Minimum="0" Maximum="100" MinWidth="200"/>
                                 <StackPanel Orientation="Horizontal">
-                                    <ToggleSwitch IsOn="False" Margin="0,5" x:Name="enableInputForward" Header="Enable Forward" Toggled="enableInputForward_Toggled" />
-                                    <ToggleSwitch IsOn="False" Margin="0,5" x:Name="enableInputBackward" Header="Enable Backward" Toggled="enableInputBackward_Toggled"/>
+                                    <ToggleSwitch IsOn="False" Margin="0,5" x:Name="enableInputForwardA" Header="Enable Forward" Toggled="enableInputForwardA_Toggled" />
+                                    <ToggleSwitch IsOn="False" Margin="0,5" x:Name="enableInputBackwardA" Header="Enable Backward" Toggled="enableInputBackwardA_Toggled"/>
                                 </StackPanel>
                             </StackPanel>
                             <StackPanel Grid.Column="1" Margin="10,0,0,0">
-                                <Slider x:Name="motorTurn" ValueChanged="motorTurn_ValueChanged"  Minimum="0" Maximum="100" MinWidth="200"/>
+                                <Slider x:Name="motorBSpeed" ValueChanged="motorBSpeed_ValueChanged"  Minimum="0" Maximum="100" MinWidth="200"/>
                                 <StackPanel Orientation="Horizontal">
-                                    <ToggleSwitch IsOn="False" Margin="0,5" x:Name="enableInputLeft" Header="Enable Left" Toggled="enableInputLeft_Toggled"/>
-                                    <ToggleSwitch IsOn="False" Margin="0,5" x:Name="enableInputRight" Header="Enable Right" Toggled="enableInputRight_Toggled" />
+                                    <ToggleSwitch IsOn="False" Margin="0,5" x:Name="enableInputForwardB" Header="Enable Forward" Toggled="enableInputForwardB_Toggled"/>
+                                    <ToggleSwitch IsOn="False" Margin="0,5" x:Name="enableInputBackwardB" Header="Enable Backward" Toggled="enableInputBackwardB_Toggled" />
                                 </StackPanel>
                             </StackPanel>
                         </Grid>
@@ -181,7 +181,7 @@
                                           ItemsSource="{Binding Path=WhitelistedVisitors}"
                                           DataContext="{StaticResource ResourceKey=WhiteListedViewModels}">
                                     <GridView.ItemTemplate>
-                                        <DataTemplate x:DataType="models:Visitor">
+                                        <DataTemplate x:DataType="facialrecognitionmodels:Visitor">
                                             <Grid Height="137" Width="120" Padding="5" Margin="1" BorderThickness="1" BorderBrush="{ThemeResource TextBoxBorderThemeBrush}" CornerRadius="5">
                                                 <Grid.RowDefinitions>
                                                     <RowDefinition Height="auto"></RowDefinition>

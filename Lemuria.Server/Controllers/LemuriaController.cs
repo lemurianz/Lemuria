@@ -30,7 +30,7 @@ namespace Lemuria.Server.Controllers
         public void Get(bool isConnect)
         {
             LemuriaHub.SetConnected = isConnect;
-            LemuriaContext.Clients.All.OnConnectionChanged(isConnect);
+            LemuriaContext.Clients.Client(LemuriaHub.SignalRClients["motor"]).OnConnectionChanged(isConnect);
         }
 
         public LemuriaModels Get(bool settings, string password)

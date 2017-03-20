@@ -1,0 +1,14 @@
+[
+  {
+    "outputFileName": "Content/new-age.min.css",
+    "inputFiles": [
+      "Content/new-age.css"
+    ]
+  },
+  {
+    "outputFileName": "vendor/bootstrap/css/bootstrap.min.css",
+    "inputFiles": [
+      "vendor/bootstrap/css/bootstrap.css"
+    ]
+  }
+]

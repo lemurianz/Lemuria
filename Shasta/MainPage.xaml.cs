@@ -21,9 +21,11 @@ using Windows.Devices.Gpio;
 using Windows.Devices.Pwm;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.Media.SpeechSynthesis;
 using Windows.Storage;
 using Windows.UI;
 using Windows.UI.Core;
+using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
@@ -42,6 +44,9 @@ namespace Shasta
     /// </summary>
     public sealed partial class MainPage : Page
     {
+
+        #region Global Variables
+
         private WebcamHelper webcam;
         private StorageFile currentIdPhotoFile;
 
@@ -55,9 +60,21 @@ namespace Shasta
         // create instance of a DHT11 
         private IDht _dhtInterface = null;
 
+        // The media object for controlling and playing audio.
+        MediaElement mediaElement = null;
+        private SpeechSynthesizer speechSynthesizer = null;
+
+        #endregion
+
         public MainPage()
         {
             this.InitializeComponent();
+            ApplicationView.PreferredLaunchViewSize = new Size(800, 480);
+            ApplicationView.PreferredLaunchWindowingMode = ApplicationViewWindowingMode.PreferredLaunchViewSize; 
+            speechSynthesizer = new SpeechSynthesizer();
+            mediaElement = new MediaElement();
+            //ReadText("Hi, I am " + speechSynthesizer.Voice.DisplayName);
+            //StaticComponents.IsLemuriaHubConnected = true;
             LemuriaConnect();
         }
 
@@ -68,6 +85,16 @@ namespace Shasta
             InitHelpers();
             InitOxford();
         }
+
+        private async void ReadText(string text)
+        {
+            SpeechSynthesisStream voiceStream = await speechSynthesizer.SynthesizeTextToStreamAsync(text);
+            voiceStream.Seek(0);
+            mediaElement.SetSource(voiceStream, voiceStream.ContentType);
+            mediaElement.Play();
+        }
+
+        #region Initialize
 
         private async void InitGPIO()
         {
@@ -80,12 +107,6 @@ namespace Shasta
                 // Show an error if there is no GPIO controller
                 if (gpio == null)
                 {
-                    StaticComponents.speedPin = null;
-                    StaticComponents.directionForwardPin = null;
-                    StaticComponents.directionBackwardPin = null;
-                    StaticComponents.turnPin = null;
-                    StaticComponents.turnLeftPin = null;
-                    StaticComponents.turnRightPin = null;
                     GpioStatus.Text = "There is no GPIO controller on this device.";
                     return;
                 }
@@ -97,35 +118,35 @@ namespace Shasta
                 var gpioControllers = await GpioController.GetControllersAsync(LightningGpioProvider.GetGpioProvider());
                 var gpioController = gpioControllers[0];
 
-                // Enable the L293D drivers Motor Speed
-                StaticComponents.speedPin = pwmController.OpenPin(StaticComponents.ENABLE_L293D_MOTOR_SPEED);
-                StaticComponents.speedPin.SetActiveDutyCyclePercentage(0);
-                StaticComponents.speedPin.Start();
+                // Enable the L293D drivers Motor Speed A
+                StaticComponents.speedAPin = pwmController.OpenPin(StaticComponents.ENABLE_L293D_MOTOR_SPEED_A);
+                StaticComponents.speedAPin.SetActiveDutyCyclePercentage(0);
+                StaticComponents.speedAPin.Start();
 
                 // Enable direction forward
-                StaticComponents.directionForwardPin = gpioController.OpenPin(StaticComponents.MOTOR_DIRECTION_FORWARD);
-                StaticComponents.directionForwardPin.Write(GpioPinValue.Low);
-                StaticComponents.directionForwardPin.SetDriveMode(GpioPinDriveMode.Output);
+                StaticComponents.directionForwardAPin = gpioController.OpenPin(StaticComponents.MOTOR_DIRECTION_FORWARD_A);
+                StaticComponents.directionForwardAPin.Write(GpioPinValue.Low);
+                StaticComponents.directionForwardAPin.SetDriveMode(GpioPinDriveMode.Output);
 
-                // Enable direction forward
-                StaticComponents.directionBackwardPin = gpioController.OpenPin(StaticComponents.MOTOR_DIRECTION_BACKWARD);
-                StaticComponents.directionBackwardPin.Write(GpioPinValue.Low);
-                StaticComponents.directionBackwardPin.SetDriveMode(GpioPinDriveMode.Output);
+                // Enable direction backward
+                StaticComponents.directionBackwardAPin = gpioController.OpenPin(StaticComponents.MOTOR_DIRECTION_BACKWARD_A);
+                StaticComponents.directionBackwardAPin.Write(GpioPinValue.Low);
+                StaticComponents.directionBackwardAPin.SetDriveMode(GpioPinDriveMode.Output);
 
                 // Enable the L293D drivers Motor Turn
-                StaticComponents.turnPin = pwmController.OpenPin(StaticComponents.ENABLE_L293D_MOTOR_TURN);
-                StaticComponents.turnPin.SetActiveDutyCyclePercentage(0);
-                StaticComponents.turnPin.Start();
+                StaticComponents.speedBPin = pwmController.OpenPin(StaticComponents.ENABLE_L293D_MOTOR_SPEED_B);
+                StaticComponents.speedBPin.SetActiveDutyCyclePercentage(0);
+                StaticComponents.speedBPin.Start();
 
                 // Enable turn left
-                StaticComponents.turnLeftPin = gpioController.OpenPin(StaticComponents.MOTOR_TURN_LEFT);
-                StaticComponents.turnLeftPin.Write(GpioPinValue.Low);
-                StaticComponents.turnLeftPin.SetDriveMode(GpioPinDriveMode.Output);
+                StaticComponents.directionForwardBPin = gpioController.OpenPin(StaticComponents.MOTOR_DIRECTION_FORWARD_B);
+                StaticComponents.directionForwardBPin.Write(GpioPinValue.Low);
+                StaticComponents.directionForwardBPin.SetDriveMode(GpioPinDriveMode.Output);
 
                 // Enable turn right
-                StaticComponents.turnRightPin = gpioController.OpenPin(StaticComponents.MOTOR_TURN_RIGHT);
-                StaticComponents.turnRightPin.Write(GpioPinValue.Low);
-                StaticComponents.turnRightPin.SetDriveMode(GpioPinDriveMode.Output);
+                StaticComponents.directionBackwardBPin = gpioController.OpenPin(StaticComponents.MOTOR_DIRECTION_BACKWARD_B);
+                StaticComponents.directionBackwardBPin.Write(GpioPinValue.Low);
+                StaticComponents.directionBackwardBPin.SetDriveMode(GpioPinDriveMode.Output);
 
                 // Enable sonar echo
                 StaticComponents.echoPin = gpioController.OpenPin(StaticComponents.SONAR_ECHO);
@@ -159,6 +180,8 @@ namespace Shasta
 
                 GpioStatus.Text = status + "GPIO pins initialized correctly.";
 
+                ReadText(GpioStatus.Text);
+
                 // Initialize the Lemuria Hub
                 LemuriaHubStat.Text = "Loading";
                 InitHub();
@@ -176,18 +199,18 @@ namespace Shasta
             {
                 var hubConnection = new HubConnection(StaticComponents.LocalWifiHub);
                 var lemuriaHub = hubConnection.CreateHubProxy("LemuriaHub");
-                lemuriaHub.On<bool>("OnConnectionChanged", connectCallback);
-                lemuriaHub.On<Tuple<string, string, int, int>>("NavigateRobot", NavigateRobotCallback);
+                lemuriaHub.On<string, int, int, int, int>("MoveRobot", MoveRobotCallback);
                 await hubConnection.Start(new LongPollingTransport());
 
                 // Start the Lemuria
-                string connectApi = StaticComponents.LocalWifiHub + "api/lemuria?isConnect=true";
-                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(connectApi);
-                await request.GetResponseAsync();
+                StaticComponents.IsLemuriaHubConnected = await lemuriaHub.Invoke<bool>("LemurianSignal", "motor");
+                LemuriaHubStat.Text = "Connected";
+                LemuriaConnect();
             }
             catch (Exception)
             {
                 StaticComponents.IsLemuriaHubConnected = false;
+                LemuriaHubStat.Text = "Not Connected";
             }
         }
 
@@ -209,146 +232,172 @@ namespace Shasta
             UpdateWhitelistedVisitors();
         }
 
+        #endregion
+
         private void LemuriaConnect()
         {
-            enableInputForward.IsEnabled = StaticComponents.IsLemuriaHubConnected;
-            enableInputBackward.IsEnabled = StaticComponents.IsLemuriaHubConnected;
-            enableInputLeft.IsEnabled = StaticComponents.IsLemuriaHubConnected;
-            enableInputRight.IsEnabled = StaticComponents.IsLemuriaHubConnected;
-            motorSpeed.IsEnabled = StaticComponents.IsLemuriaHubConnected;
-            motorTurn.IsEnabled = StaticComponents.IsLemuriaHubConnected;
-            enableInputLeft.IsEnabled = StaticComponents.IsLemuriaHubConnected;
+            // Motor Driver
+            enableInputForwardA.IsEnabled = StaticComponents.IsLemuriaHubConnected;
+            enableInputBackwardA.IsEnabled = StaticComponents.IsLemuriaHubConnected;
+            enableInputForwardB.IsEnabled = StaticComponents.IsLemuriaHubConnected;
+            enableInputBackwardB.IsEnabled = StaticComponents.IsLemuriaHubConnected;
+            motorASpeed.IsEnabled = StaticComponents.IsLemuriaHubConnected;
+            motorBSpeed.IsEnabled = StaticComponents.IsLemuriaHubConnected;
+            // Object Avoidance
             SendSonar.IsEnabled = StaticComponents.IsLemuriaHubConnected;
+            // Facial Recognition
+            CaptureButton.IsEnabled = StaticComponents.IsLemuriaHubConnected;
+            WhitelistedUsersGridView.IsEnabled = StaticComponents.IsLemuriaHubConnected;
+            FindPerson.IsEnabled = StaticComponents.IsLemuriaHubConnected;
+            // Floor Detection
+            Infra1Detect.IsEnabled = StaticComponents.IsLemuriaHubConnected;
+            Infra2Detect.IsEnabled = StaticComponents.IsLemuriaHubConnected;
+            Infra3Detect.IsEnabled = StaticComponents.IsLemuriaHubConnected;
+            Infra4Detect.IsEnabled = StaticComponents.IsLemuriaHubConnected;
+            // Temperature Detection
+            GetTemperatureHumidity.IsEnabled = StaticComponents.IsLemuriaHubConnected;
         }
 
-        // Call Backs
+        // Call Backs from SignalR
 
-        private void connectCallback(bool connect)
-        {
-            StaticComponents.IsLemuriaHubConnected = connect;
-            CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
-            () =>
-            {
-                // Your UI update code goes here!
-                if (connect)
-                    LemuriaHubStat.Text = "Connected";
-                else LemuriaHubStat.Text = "Not Connected";
-
-                LemuriaConnect();
-            }).AsTask();
-        }
-
-        private void NavigateRobotCallback(Tuple<string, string, int, int> navigate)
+        private void MoveRobotCallback(string direction, int forward, int backward, int left, int right)
         {
             CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
             () =>
             {
-                // Your UI update code goes here!
-                string fbTag = navigate.Item1;
-                string lrTag = navigate.Item2;
-                int directionSpeed = navigate.Item3;
-                int turnSpeed = navigate.Item4;
-
-                if (fbTag == "front" & !enableInputForward.IsOn) enableInputForward.IsOn = true;
-                else if (fbTag == "back" & !enableInputBackward.IsOn) enableInputBackward.IsOn = true;
-                else
+                switch (direction)
                 {
-                    enableInputForward.IsOn = false;
-                    enableInputBackward.IsOn = false;
+                    case "forward":
+                        motorASpeed.Value = forward;
+                        motorBSpeed.Value = forward;
+                        if (forward > 0)
+                        {
+                            enableInputForwardA.IsOn = true;
+                            enableInputForwardB.IsOn = true;
+                        }
+                        else
+                        {
+                            enableInputForwardA.IsOn = false;
+                            enableInputForwardB.IsOn = false;
+                        }
+                        break;
+                    case "backward":
+                        motorASpeed.Value = backward;
+                        motorBSpeed.Value = backward;
+                        if (backward > 0)
+                        {
+                            enableInputBackwardA.IsOn = true;
+                            enableInputBackwardB.IsOn = true;
+                        }
+                        else
+                        {
+                            enableInputBackwardA.IsOn = false;
+                            enableInputBackwardB.IsOn = false;
+                        }
+                        break;
+                    case "left":
+                        motorASpeed.Value = left;
+                        if(left > 0)
+                            enableInputForwardA.IsOn = true;
+                        else enableInputForwardA.IsOn = false;
+                        break;
+                    case "right":
+                        motorBSpeed.Value = right;
+                        if (right > 0)
+                            enableInputForwardB.IsOn = true;
+                        else enableInputForwardB.IsOn = false;
+                        break;
+                    default:
+                        break;
                 }
-
-                if (lrTag == "left" & !enableInputLeft.IsOn) enableInputLeft.IsOn = true;
-                else if (lrTag == "right" & !enableInputRight.IsOn) enableInputRight.IsOn = true;
-                else
-                {
-                    enableInputLeft.IsOn = false;
-                    enableInputRight.IsOn = false;
-                }
-
-                motorSpeed.Value = directionSpeed;
-                motorTurn.Value = turnSpeed;
             }).AsTask();
         }
 
         // UI Events
 
-        private void DisableDirection()
+        #region Motor Driver
+
+        private void TurnOffMotorA()
         {
-            enableInputForward.IsOn = false;
-            enableInputBackward.IsOn = false;
-            StaticMethods.enableInput(true, false, enableInputForward.IsOn);
-            StaticMethods.enableInput(false, true, enableInputBackward.IsOn);
+            enableInputForwardA.IsOn = false;
+            enableInputBackwardA.IsOn = false;
+            StaticMethods.enableMotorA(true, false, enableInputForwardA.IsOn);
+            StaticMethods.enableMotorA(false, true, enableInputBackwardA.IsOn);
             ForwardIndicator.Foreground = StaticComponents.inactiveBrush;
             BackwardIndicator.Foreground = StaticComponents.inactiveBrush;
         }
 
-        private void DisableTurn()
+        private void TurnOffMotorB()
         {
-            enableInputLeft.IsOn = false;
-            enableInputRight.IsOn = false;
-            StaticMethods.enableTurn(true, false, enableInputLeft.IsOn);
-            StaticMethods.enableTurn(false, true, enableInputRight.IsOn);
+            enableInputForwardB.IsOn = false;
+            enableInputBackwardB.IsOn = false;
+            StaticMethods.enableMotorB(true, false, enableInputForwardB.IsOn);
+            StaticMethods.enableMotorB(false, true, enableInputBackwardB.IsOn);
             LeftIndicator.Foreground = StaticComponents.inactiveBrush;
             RightIndicator.Foreground = StaticComponents.inactiveBrush;
         }
 
-        private void enableInputForward_Toggled(object sender, RoutedEventArgs e)
+        private void motorASpeed_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
-            if (enableInputForward.IsOn)
+            StaticComponents.speedAPin.SetActiveDutyCyclePercentage(e.NewValue * .01);
+        }
+
+        private void motorBSpeed_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        {
+            StaticComponents.speedBPin.SetActiveDutyCyclePercentage(e.NewValue * .01);
+        }
+
+        private void enableInputForwardA_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (enableInputForwardA.IsOn)
             {
-                enableInputBackward.IsOn = false;
-                StaticMethods.enableInput(true, false, enableInputForward.IsOn);
+                enableInputBackwardA.IsOn = false;
+                StaticMethods.enableMotorA(true, false, enableInputForwardA.IsOn);
                 ForwardIndicator.Foreground = StaticComponents.activeBrush;
                 BackwardIndicator.Foreground = StaticComponents.inactiveBrush;
             }
-            else DisableDirection();
+            else TurnOffMotorA();
         }
 
-        private void enableInputBackward_Toggled(object sender, RoutedEventArgs e)
+        private void enableInputBackwardA_Toggled(object sender, RoutedEventArgs e)
         {
-            if (enableInputBackward.IsOn)
+            if (enableInputBackwardA.IsOn)
             {
-                enableInputForward.IsOn = false;
-                StaticMethods.enableInput(false, true, enableInputBackward.IsOn);
+                enableInputForwardA.IsOn = false;
+                StaticMethods.enableMotorA(false, true, enableInputBackwardA.IsOn);
                 BackwardIndicator.Foreground = StaticComponents.activeBrush;
                 ForwardIndicator.Foreground = StaticComponents.inactiveBrush;
             }
-            else DisableDirection();
+            else TurnOffMotorA();
         }
 
-        private void motorSpeed_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        private void enableInputForwardB_Toggled(object sender, RoutedEventArgs e)
         {
-            StaticComponents.speedPin.SetActiveDutyCyclePercentage(e.NewValue * .01);
-        }
-
-        private void enableInputLeft_Toggled(object sender, RoutedEventArgs e)
-        {
-            if (enableInputLeft.IsOn)
+            if (enableInputForwardB.IsOn)
             {
-                enableInputRight.IsOn = false;
-                StaticMethods.enableTurn(true, false, enableInputLeft.IsOn);
+                enableInputBackwardB.IsOn = false;
+                StaticMethods.enableMotorB(true, false, enableInputForwardB.IsOn);
                 LeftIndicator.Foreground = StaticComponents.activeBrush;
                 RightIndicator.Foreground = StaticComponents.inactiveBrush;
             }
-            else DisableTurn();
+            else TurnOffMotorB();
         }
 
-        private void enableInputRight_Toggled(object sender, RoutedEventArgs e)
+        private void enableInputBackwardB_Toggled(object sender, RoutedEventArgs e)
         {
-            if (enableInputRight.IsOn)
+            if (enableInputBackwardB.IsOn)
             {
-                enableInputLeft.IsOn = false;
-                StaticMethods.enableTurn(true, false, enableInputRight.IsOn);
+                enableInputForwardB.IsOn = false;
+                StaticMethods.enableMotorB(true, false, enableInputBackwardB.IsOn);
                 RightIndicator.Foreground = StaticComponents.activeBrush;
                 LeftIndicator.Foreground = StaticComponents.inactiveBrush;
             }
-            else DisableTurn();
+            else TurnOffMotorB();
         }
 
-        private void motorTurn_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
-        {
-            StaticComponents.turnPin.SetActiveDutyCyclePercentage(e.NewValue * .01);
-        }
+        #endregion
+
+        #region Object Avoidance
 
         private void SendSonar_Toggled(object sender, RoutedEventArgs e)
         {
@@ -376,6 +425,9 @@ namespace Shasta
             }).AsTask();
         }
 
+        #endregion
+
+        #region Facial Recognition
 
         private void ResetCapture()
         {
@@ -467,7 +519,7 @@ namespace Shasta
         private async Task UpdateWhitelistedVisitorsList()
         {
             // Clears whitelist
-            WhiteListedViewModels.RemoveAllItems();
+            WhiteListedViewModels.WhitelistedVisitors.Clear();
 
             // If the whitelistFolder has not been opened, open it
             if (whitelistFolder == null)
@@ -636,6 +688,10 @@ namespace Shasta
             FindPerson.Visibility = Visibility.Visible;
         }
 
+        #endregion
+
+        #region Floor Detection
+
         private Task<bool> HasInfra1Obstacle()
         {
             bool hasObject = false;
@@ -732,6 +788,10 @@ namespace Shasta
             }
         }
 
+        #endregion
+
+        #region Temperature Detection
+
         private async Task<Tuple<double, double>> GetTemperatureAndHumidity()
         {
             double temperature = 0, humidity = 0;
@@ -770,5 +830,7 @@ namespace Shasta
                 await Task.Delay(1500);
             }
         }
+
+        #endregion
     }
 }

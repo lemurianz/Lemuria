@@ -12,7 +12,7 @@ namespace Shasta.Facial_Recognition
     /// <summary>
     /// Contains information such as name and location of ID images in storage for each authorized visitor to the Facial Recognition Door
     /// </summary>
-    class Visitor : INotifyPropertyChanged
+    public class Visitor : INotifyPropertyChanged
     {
         // Declare the event
         public event PropertyChangedEventHandler PropertyChanged;

@@ -25,14 +25,14 @@ namespace Lemuria.Server
                       "~/vendor/font-awesome/css/font-awesome.min.css",
                       "~/vendor/simple-line-icons/css/simple-line-icons.css",
                       "~/vendor/device-mockups/device-mockups.min.css",
-                      "~/Content/new-age.css"));
+                      "~/Content/new-age.min.css"));
 
 
             bundles.Add(new ScriptBundle("~/bundles/js").Include(
-                      "~/vendor/bootstrap/js/bootstrap.min.js",
                       "~/vendor/jquery/jquery.min.js",
                       "~/Scripts/jquery.easing.min.js",
-                      "~/Scripts/new-age.js"));
+                      "~/vendor/bootstrap/js/bootstrap.min.js",
+                      "~/Scripts/new-age.min.js"));
 
         }
     }
