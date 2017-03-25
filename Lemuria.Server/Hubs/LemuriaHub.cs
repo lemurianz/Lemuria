@@ -11,10 +11,7 @@ namespace Lemuria.Server.Hubs
     {
         public static bool SetConnected { get; set; }
         public static Dictionary<string, string> SignalRClients { get; set; }
-        public static string FBTag { get; set; }
-        public static string LRTag { get; set; }
-        public static int DirectionSpeed { get; set; }
-        public static int TurnSpeed { get; set; }
+        public static SettingsModels Settings { get; set; }
 
 
         public LemuriaHub()
@@ -24,6 +21,7 @@ namespace Lemuria.Server.Hubs
                 SignalRClients.Add("motor", "");
                 SignalRClients.Add("master", "");
             }
+            if (Settings == null) Settings = new SettingsModels();
         }
 
         public bool LemurianSignal(string type)
@@ -51,5 +49,142 @@ namespace Lemuria.Server.Hubs
             if (masterId == this.Context.ConnectionId & !string.IsNullOrEmpty(motorId))
                 this.Clients.Client(motorId).MoveRobot(direction, speed.ForwardSpeed, speed.BackwardSpeed, speed.LeftSpeed, speed.RightSpeed);
         }
+
+        public SettingsModels GetLemurianSettings(string type)
+        {
+            SettingsModels settings = new SettingsModels();
+            switch (type)
+            {
+                case "motor":
+                case "master":
+                    if (settings.MaxMotorSpeedA == 0) Settings.MaxMotorSpeedA = 100;
+                    if (settings.MaxMotorSpeedB == 0) Settings.MaxMotorSpeedB = 100;
+                    settings = Settings;
+                    break;
+                default:
+                    break;
+            }
+            return settings;
+        }
+
+        private bool ControllerMotorPass()
+        {
+            var masterId = SignalRClients["master"];
+            var motorId = SignalRClients["motor"];
+            if (masterId == this.Context.ConnectionId & !string.IsNullOrEmpty(motorId))
+                return true;
+            else return false;
+        }
+
+        // Set the settings
+        public bool SetMaxMotorASpeed(int value)
+        {
+            if (ControllerMotorPass()) { 
+                Settings.MaxMotorSpeedA = value;
+                this.Clients.Client(SignalRClients["motor"]).SetMotorAMaxSpeed(Settings.MaxMotorSpeedA);
+            }
+            return true;
+        }
+
+        public bool SetMaxMotorBSpeed(int value)
+        {
+            if (ControllerMotorPass())
+            {
+                Settings.MaxMotorSpeedB = value;
+                this.Clients.Client(SignalRClients["motor"]).SetMotorBMaxSpeed(Settings.MaxMotorSpeedB);
+            }
+            return true;
+        }
+
+        public bool SetTopLeftIRSensor(bool value)
+        {
+            if (ControllerMotorPass())
+            {
+                Settings.TopLeftIR = value;
+                this.Clients.Client(SignalRClients["motor"]).SetTopLeftIRSensor(Settings.TopLeftIR);
+            }
+            return true;
+        }
+
+        public bool SetTopRightIRSensor(bool value)
+        {
+            if (ControllerMotorPass())
+            {
+                Settings.TopRightIR = value;
+                this.Clients.Client(SignalRClients["motor"]).SetTopRightIRSensor(Settings.TopRightIR);
+            }
+            return true;
+        }
+
+        public bool SetBottomLeftIRSensor(bool value)
+        {
+            if (ControllerMotorPass())
+            {
+                Settings.BottomLeftIR = value;
+                this.Clients.Client(SignalRClients["motor"]).SetBottomLeftIRSensor(Settings.BottomLeftIR);
+            }
+            return true;
+        }
+
+        public bool SetBottomRightIRSensor(bool value)
+        {
+            if (ControllerMotorPass())
+            {
+                Settings.BottomRightIR = value;
+                this.Clients.Client(SignalRClients["motor"]).SetBottomRightIRSensor(Settings.BottomRightIR);
+            }
+            return true;
+        }
+
+        public bool SetFrontSonarSensor(bool value)
+        {
+            Settings.FrontSonar = value;
+            return true;
+        }
+
+        public bool SetBackSonarSensor(bool value)
+        {
+            Settings.BackSonar = value;
+            return true;
+        }
+
+        public bool SetTemperatureHumiditySensor(bool value)
+        {
+            Settings.InternalTempAndHum = value;
+            return true;
+        }
+
+        public bool SetFaceDetectionCamera(bool value)
+        {
+            Settings.FaceDetect = value;
+            return true;
+        }
+
+        // Set Notifications to Controller
+        public void NotifyTopLeftIR(bool value)
+        {
+            this.Clients.Client(SignalRClients["master"]).NotifyTopLeftIR(value);
+        }
+
+        public void NotifyTopRightIR(bool value)
+        {
+            this.Clients.Client(SignalRClients["master"]).NotifyTopRightIR(value);
+        }
+
+        public void NotifyBottomLeftIR(bool value)
+        {
+            this.Clients.Client(SignalRClients["master"]).NotifyBottomLeftIR(value);
+        }
+
+        public void NotifyBottomRightIR(bool value)
+        {
+            this.Clients.Client(SignalRClients["master"]).NotifyBottomRightIR(value);
+        }
+
+        public void NotifySonarDistance(double distance)
+        {
+            this.Clients.Client(SignalRClients["master"]).NotifySonarDistance(distance);
+        }
+
     }
 }

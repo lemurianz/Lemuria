@@ -23,41 +23,9 @@ namespace Lemuria.Server.Controllers
         public string Get()
         {
             if (LemuriaHub.SetConnected)
-                return "Lemuria is online";
-            else return "Lemuria is offline";
+                return "Lemurian module is online";
+            else return "Lemurian module is offline";
         }
 
-        public void Get(bool isConnect)
-        {
-            LemuriaHub.SetConnected = isConnect;
-            LemuriaContext.Clients.Client(LemuriaHub.SignalRClients["motor"]).OnConnectionChanged(isConnect);
-        }
-
-        public LemuriaModels Get(bool settings, string password)
-        {
-            if (password == "lemuria" & LemuriaHub.SetConnected)
-            {
-                if (settings == true)
-                    return new LemuriaModels
-                    {
-                        SetConnected = LemuriaHub.SetConnected,
-                        FBTag = LemuriaHub.FBTag,
-                        LRTag = LemuriaHub.LRTag,
-                        DirectionSpeed = LemuriaHub.DirectionSpeed,
-                        TurnSpeed = LemuriaHub.TurnSpeed
-                    };
-                else return null;
-            }
-            else return null;
-        }
-
-        public void Get(string fbTag, string lrTag, int directionSpeed, int turnSpeed)
-        {
-            LemuriaHub.FBTag = fbTag;
-            LemuriaHub.LRTag = lrTag;
-            LemuriaHub.DirectionSpeed = directionSpeed;
-            LemuriaHub.TurnSpeed = turnSpeed;
-            LemuriaContext.Clients.All.NavigateRobot(new Tuple<string, string, int, int>(fbTag, lrTag, directionSpeed, turnSpeed));
-        }
     }
 }

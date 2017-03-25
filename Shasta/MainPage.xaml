@@ -144,7 +144,7 @@
                 </PivotItem>
                 <PivotItem Header="Sonar">
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <ToggleSwitch x:Name="SendSonar" Header="Enable Sonar Detection" Toggled="SendSonar_Toggled"></ToggleSwitch>
+                        <ToggleSwitch x:Name="FrontSonar" Header="Enable Sonar Detection" Toggled="FrontSonar_Toggled"></ToggleSwitch>
                     </StackPanel>
                 </PivotItem>
                 <PivotItem Header="Detection">

@@ -113,7 +113,10 @@
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Models\InfraUpdateModels.cs" />
+    <Compile Include="Models\SettingsModels.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ViewModels\SettingsNotificationModelds.cs" />
     <Compile Include="ViewModels\WhiteListedViewModels.cs" />
   </ItemGroup>
   <ItemGroup>

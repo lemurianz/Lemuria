@@ -417,9 +417,9 @@
     <Grid Background="Black">
         <Pivot Loaded="LemuriaPivot_Loaded" Title="Lemuria" Foreground="White" x:Name="LemuriaPivot" 
                Visibility="Visible" IsTabStop="False">
-            <!--<Pivot.Background>
+            <Pivot.Background>
                 <ImageBrush Stretch="UniformToFill" ImageSource="Assets/Background.jpg"/>
-            </Pivot.Background>-->
+            </Pivot.Background>
             <Pivot.HeaderTemplate>
                 <DataTemplate>
                     <Grid>
@@ -546,8 +546,13 @@
                                     <StackPanel VerticalAlignment="Center">
                                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                             <TextBlock x:Name="SpeedTextblock" Text="Speed" HorizontalAlignment="Center"></TextBlock>
-                                            <TextBlock x:Name="DirectionTextblock" FontFamily="Segoe UI Symbol" Margin="10,0,0,0"
+                                            
+                                            <TextBlock x:Name="MotorATextblock" FontFamily="Segoe UI Symbol" Margin="10,0,0,0"
+                                                       Text="◐" HorizontalAlignment="Center" FontSize="8"></TextBlock>
+                                            <TextBlock x:Name="DirectionTextblock" FontFamily="Segoe UI Symbol" Margin="1,0,0,0"
                                                        Text="" HorizontalAlignment="Center" FontSize="10"></TextBlock>
+                                            <TextBlock x:Name="MotorBTextblock" FontFamily="Segoe UI Symbol" Margin="1,0,0,0"
+                                                       Text="◑" HorizontalAlignment="Center" FontSize="8"></TextBlock>
                                         </StackPanel>
                                         <Rectangle Height="1" Fill="White"></Rectangle>
                                         <TextBlock x:Name="DistanceTextblock" Text="Distance" HorizontalAlignment="Center"></TextBlock>
@@ -559,26 +564,26 @@
                             <!--IR Sensors Start -->
                             <Viewbox Stretch="Uniform">
                                 <StackPanel Margin="2" Padding="5">
-                                    <Ellipse x:Name="IRTopLeftElipse" Fill="White" Stretch="Uniform" Height="10" Width="10"></Ellipse>
-                                    <TextBlock x:Name="IRTopLeftTextblock" Text="Status" FontSize="4" FontWeight="Bold"></TextBlock>
+                                    <Ellipse   x:Name="IRTopLeftElipse" Fill="White" Stretch="Uniform" Height="10" Width="10"></Ellipse>
+                                    <TextBlock x:Name="IRTopLeftTextblock" TextAlignment="Center" Text="Status" FontSize="4" FontWeight="Bold"></TextBlock>
                                 </StackPanel>
                             </Viewbox>
                             <Viewbox Grid.Column="2" Stretch="Uniform">
                                 <StackPanel Margin="2" Padding="5">
                                     <Ellipse x:Name="IRTopRightElipse" Fill="White" Stretch="Uniform" Height="10" Width="10"></Ellipse>
-                                    <TextBlock x:Name="IRTopRightTextblock" Text="Status" FontSize="4" FontWeight="Bold"></TextBlock>
+                                    <TextBlock x:Name="IRTopRightTextblock" TextAlignment="Center" Text="Status" FontSize="4" FontWeight="Bold"></TextBlock>
                                 </StackPanel>
                             </Viewbox>
                             <Viewbox Stretch="Uniform" Grid.Row="2">
                                 <StackPanel Margin="2" Padding="5">
                                     <Ellipse x:Name="IRBottomLeftElipse" Fill="White" Stretch="Uniform" Height="10" Width="10"></Ellipse>
-                                    <TextBlock x:Name="IRBottomLeftTextblock" Text="Status" FontSize="4" FontWeight="Bold"></TextBlock>
+                                    <TextBlock x:Name="IRBottomLeftTextblock" TextAlignment="Center" Text="Status" FontSize="4" FontWeight="Bold"></TextBlock>
                                 </StackPanel>
                             </Viewbox>
                             <Viewbox Stretch="Uniform" Grid.Row="2" Grid.Column="2">
                                 <StackPanel Margin="2" Padding="5">
                                     <Ellipse x:Name="IRBottomRightElipse" Fill="White" Stretch="Uniform" Height="10" Width="10"></Ellipse>
-                                    <TextBlock x:Name="IRBottomRightTextblock" Text="Status" FontSize="4" FontWeight="Bold"></TextBlock>
+                                    <TextBlock x:Name="IRBottomRightTextblock" TextAlignment="Center" Text="Status" FontSize="4" FontWeight="Bold"></TextBlock>
                                 </StackPanel>
                             </Viewbox>
                             <!--IR Sensors End -->
@@ -697,7 +702,7 @@
                         </StackPanel>
                         <StackPanel Margin="0,0,0,15">
                             <TextBlock Text="Face Detection" FontSize="20"></TextBlock>
-                            <TextBlock Grid.Row="1" Text="Coming soon" FontSize="8" FontWeight="Normal"></TextBlock>
+                            <ToggleSwitch x:Name="FaceDetectionCamera"></ToggleSwitch>
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>

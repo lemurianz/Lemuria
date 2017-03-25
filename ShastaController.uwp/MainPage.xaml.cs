@@ -14,6 +14,7 @@ using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.Media.SpeechRecognition;
 using Windows.Storage;
+using Windows.UI;
 using Windows.UI.Core;
 using Windows.UI.Popups;
 using Windows.UI.ViewManagement;
@@ -126,8 +127,13 @@ namespace ShastaController.uwp
             var hasConnected = false;
             try
             {
-                var hubConnection = new HubConnection("http://192.168.0.57:52232/");
+                var hubConnection = new HubConnection("http://localhost:52232/");
                 LemurianHub = hubConnection.CreateHubProxy("LemuriaHub");
+                LemurianHub.On<bool>("NotifyTopLeftIR", NotifyTopLeftIRCallback);
+                LemurianHub.On<bool>("NotifyTopRightIR", NotifyTopRightIRCallback);
+                LemurianHub.On<bool>("NotifyBottomLeftIR", NotifyBottomLeftIRCallback);
+                LemurianHub.On<bool>("NotifyBottomRightIR", NotifyBottomRightIRCallback);
+                LemurianHub.On<double>("NotifySonarDistance", NotifySonarDistanceCallback);
                 await hubConnection.Start(new LongPollingTransport());
 
                 // Start the Lemuria
@@ -140,6 +146,61 @@ namespace ShastaController.uwp
 
 
             return hasConnected;
+        }
+
+        // Callbacks
+        private void NotifyBottomRightIRCallback(bool value)
+        {
+            CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+            () =>
+            {
+                if (value)
+                    IRBottomRightElipse.Fill = new SolidColorBrush(Colors.Red);
+                else IRBottomRightElipse.Fill = new SolidColorBrush(Colors.White);
+            }).AsTask();
+        }
+
+        private void NotifyBottomLeftIRCallback(bool value)
+        {
+            CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+            () =>
+            {
+                if (value)
+                    IRBottomLeftElipse.Fill = new SolidColorBrush(Colors.Red);
+                else IRBottomLeftElipse.Fill = new SolidColorBrush(Colors.White);
+            }).AsTask();
+        }
+
+        private void NotifyTopRightIRCallback(bool value)
+        {
+            CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+            () =>
+            {
+                if (value)
+                    IRTopRightElipse.Fill = new SolidColorBrush(Colors.Red);
+                else IRTopRightElipse.Fill = new SolidColorBrush(Colors.White);
+            }).AsTask();
+
+        }
+
+        private void NotifyTopLeftIRCallback(bool value)
+        {
+            CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+            () =>
+            {
+                if (value)
+                    IRTopLeftElipse.Fill = new SolidColorBrush(Colors.Red);
+                else IRTopLeftElipse.Fill = new SolidColorBrush(Colors.White);
+            }).AsTask();
+        }
+
+        private void NotifySonarDistanceCallback(double value)
+        {
+            CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+            () =>
+            {
+                DistanceTextblock.Text = value.ToString();
+            }).AsTask();
         }
 
         void SelectPage(string page)
@@ -194,7 +255,7 @@ namespace ShastaController.uwp
 
         private void Notifiers_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == "isForwardPressed")
+            if (e.PropertyName == "IsForwardPressed")
                 MoveForward();
             if (e.PropertyName == "IsBackwardPressed")
                 MoveBackward();
@@ -244,6 +305,8 @@ namespace ShastaController.uwp
         {
             SpeedTextblock.Text = "Speed";
             DirectionTextblock.Text = "";
+            MotorATextblock.Text = "◐";
+            MotorBTextblock.Text = "◑";
             return 0;
         }
 
@@ -260,10 +323,14 @@ namespace ShastaController.uwp
                 ResetAllSpeeds();
                 while (notifiers.IsForwardPressed)
                 {
-                    if (speed.ForwardSpeed > 100) break;
-                    DirectionTextblock.Text = "⮝";
-                    SpeedTextblock.Text = speed.ForwardSpeed.ToString();
-                    speed.ForwardSpeed += 1;
+                    if (speed.ForwardSpeed > MaxMotorASpeed.Value) MotorATextblock.Text = "◈";
+                    if (speed.ForwardSpeed > MaxMotorBSpeed.Value) MotorBTextblock.Text = "◈";
+                    if (speed.ForwardSpeed < 100)
+                    {
+                        DirectionTextblock.Text = "⮝";
+                        SpeedTextblock.Text = speed.ForwardSpeed.ToString();
+                        speed.ForwardSpeed += 1;
+                    }
                     await Task.Delay(250);
 
                     LemurianMove("forward", speed);
@@ -279,10 +346,14 @@ namespace ShastaController.uwp
                 ResetAllSpeeds();
                 while (notifiers.IsBackwardPressed)
                 {
-                    if (speed.BackwardSpeed > 100) break;
-                    SpeedTextblock.Text = speed.BackwardSpeed.ToString();
-                    DirectionTextblock.Text = "⮟";
-                    speed.BackwardSpeed += 1;
+                    if (speed.BackwardSpeed > MaxMotorASpeed.Value) MotorATextblock.Text = "◈";
+                    if (speed.BackwardSpeed > MaxMotorBSpeed.Value) MotorBTextblock.Text = "◈";
+                    if (speed.BackwardSpeed < 100)
+                    {
+                        SpeedTextblock.Text = speed.BackwardSpeed.ToString();
+                        DirectionTextblock.Text = "⮟";
+                        speed.BackwardSpeed += 1;
+                    }
                     await Task.Delay(250);
 
                     LemurianMove("backward", speed);
@@ -298,10 +369,13 @@ namespace ShastaController.uwp
                 ResetAllSpeeds();
                 while (notifiers.IsLeftPressed)
                 {
-                    if (speed.LeftSpeed > 100) break;
-                    SpeedTextblock.Text = speed.LeftSpeed.ToString();
-                    DirectionTextblock.Text = "⮜";
-                    speed.LeftSpeed += 1;
+                    if (speed.LeftSpeed > MaxMotorASpeed.Value) MotorATextblock.Text = "◈";
+                    if (speed.LeftSpeed < 100)
+                    {
+                        SpeedTextblock.Text = speed.LeftSpeed.ToString();
+                        DirectionTextblock.Text = "⮜";
+                        speed.LeftSpeed += 1;
+                    }
                     await Task.Delay(250);
 
                     LemurianMove("left", speed);
@@ -317,10 +391,13 @@ namespace ShastaController.uwp
                 ResetAllSpeeds();
                 while (notifiers.IsRightPressed)
                 {
-                    if (speed.RightSpeed > 100) break;
-                    SpeedTextblock.Text = speed.RightSpeed.ToString();
-                    DirectionTextblock.Text = "⮞";
-                    speed.RightSpeed += 1;
+                    if (speed.RightSpeed > MaxMotorBSpeed.Value) MotorBTextblock.Text = "◈";
+                    if (speed.RightSpeed < 100)
+                    {
+                        SpeedTextblock.Text = speed.RightSpeed.ToString();
+                        DirectionTextblock.Text = "⮞";
+                        speed.RightSpeed += 1;
+                    }
                     await Task.Delay(250);
 
                     LemurianMove("right", speed);
@@ -454,7 +531,151 @@ namespace ShastaController.uwp
                 SelectPage("main");
                 CoreWindow.GetForCurrentThread().KeyDown += MainPage_KeyDown;
                 CoreWindow.GetForCurrentThread().KeyUp += MainPage_KeyUp;
+                UpdateSettingsPage(await LemurianHub.Invoke<SettingsModels>("GetLemurianSettings", "master"));
             }
         }
+
+        #region Settings
+        private void UpdateIRStatus()
+        {
+            if (TopLeftIRSensor.IsOn)
+            {
+                IRTopLeftElipse.Fill = new SolidColorBrush(Colors.White);
+                IRTopLeftTextblock.Text = "On";
+            }
+            else
+            {
+                IRTopLeftElipse.Fill = new SolidColorBrush(Colors.Silver);
+                IRTopLeftTextblock.Text = "off";
+            }
+
+            if (TopRightIRSensor.IsOn)
+            {
+                IRTopRightElipse.Fill = new SolidColorBrush(Colors.White);
+                IRTopRightTextblock.Text = "On";
+            }
+            else
+            {
+                IRTopRightElipse.Fill = new SolidColorBrush(Colors.Silver);
+                IRTopRightTextblock.Text = "off";
+            }
+
+            if (BottomLeftIRSensor.IsOn)
+            {
+                IRBottomLeftElipse.Fill = new SolidColorBrush(Colors.White);
+                IRBottomLeftTextblock.Text = "On";
+            }
+            else
+            {
+                IRBottomLeftElipse.Fill = new SolidColorBrush(Colors.Silver);
+                IRBottomLeftTextblock.Text = "off";
+            }
+
+            if (BottomRightIRSensor.IsOn)
+            {
+                IRBottomRightElipse.Fill = new SolidColorBrush(Colors.White);
+                IRBottomRightTextblock.Text = "On";
+            }
+            else
+            {
+                IRBottomRightElipse.Fill = new SolidColorBrush(Colors.Silver);
+                IRBottomRightTextblock.Text = "off";
+            }
+        }
+
+        private void UpdateSettingsPage(SettingsModels model)
+        {
+            // Setup values
+            //motor
+            MaxMotorASpeed.Value = model.MaxMotorSpeedA;
+            MaxMotorBSpeed.Value = model.MaxMotorSpeedB;
+            //ir sensors
+            TopLeftIRSensor.IsOn = model.TopLeftIR;
+            TopRightIRSensor.IsOn = model.TopRightIR;
+            BottomLeftIRSensor.IsOn = model.BottomLeftIR;
+            BottomRightIRSensor.IsOn = model.BottomRightIR;
+            //sonar senors
+            FrontSonarSensor.IsOn = model.FrontSonar;
+            BackSonarSensor.IsOn = model.BackSonar;
+            //temperature humidity sensor
+            TemperatureHumiditySensor.IsOn = model.InternalTempAndHum;
+            //face detection
+            FaceDetectionCamera.IsOn = model.FaceDetect;
+            
+            // Setup events
+            //motor
+            MaxMotorASpeed.ValueChanged += MaxMotorASpeed_ValueChanged;
+            MaxMotorBSpeed.ValueChanged += MaxMotorBSpeed_ValueChanged;
+            //ir sensors
+            TopLeftIRSensor.Toggled += TopLeftIRSensor_Toggled;
+            TopRightIRSensor.Toggled += TopRightIRSensor_Toggled;
+            BottomLeftIRSensor.Toggled += BottomLeftIRSensor_Toggled;
+            BottomRightIRSensor.Toggled += BottomRightIRSensor_Toggled;
+            //sonar sensors
+            FrontSonarSensor.Toggled += FrontSonarSensor_Toggled;
+            BackSonarSensor.Toggled += BackSonarSensor_Toggled;
+            //temperature humidity sensor
+            TemperatureHumiditySensor.Toggled += TemperatureHumiditySensor_Toggled;
+            //face detection
+            FaceDetectionCamera.Toggled += FaceDetectionCamera_Toggled;
+
+            // Initialize
+            UpdateIRStatus();
+        }
+
+        private async void FaceDetectionCamera_Toggled(object sender, RoutedEventArgs e)
+        {
+            await LemurianHub.Invoke<bool>("SetFaceDetectionCamera", ((ToggleSwitch)sender).IsOn);
+        }
+
+        private async void TemperatureHumiditySensor_Toggled(object sender, RoutedEventArgs e)
+        {
+            await LemurianHub.Invoke<bool>("SetTemperatureHumiditySensor", ((ToggleSwitch)sender).IsOn);
+        }
+
+        private async void BackSonarSensor_Toggled(object sender, RoutedEventArgs e)
+        {
+            await LemurianHub.Invoke<bool>("SetBackSonarSensor", ((ToggleSwitch)sender).IsOn);
+        }
+
+        private async void FrontSonarSensor_Toggled(object sender, RoutedEventArgs e)
+        {
+            await LemurianHub.Invoke<bool>("SetFrontSonarSensor", ((ToggleSwitch)sender).IsOn);
+        }
+
+        private async void BottomRightIRSensor_Toggled(object sender, RoutedEventArgs e)
+        {
+            UpdateIRStatus();
+            await LemurianHub.Invoke<bool>("SetBottomRightIRSensor", ((ToggleSwitch)sender).IsOn);
+        }
+
+        private async void BottomLeftIRSensor_Toggled(object sender, RoutedEventArgs e)
+        {
+            UpdateIRStatus();
+            await LemurianHub.Invoke<bool>("SetBottomLeftIRSensor", ((ToggleSwitch)sender).IsOn);
+        }
+
+        private async void TopRightIRSensor_Toggled(object sender, RoutedEventArgs e)
+        {
+            UpdateIRStatus();
+            await LemurianHub.Invoke<bool>("SetTopRightIRSensor", ((ToggleSwitch)sender).IsOn);
+        }
+
+        private async void TopLeftIRSensor_Toggled(object sender, RoutedEventArgs e)
+        {
+            UpdateIRStatus();
+            await LemurianHub.Invoke<bool>("SetTopLeftIRSensor", ((ToggleSwitch)sender).IsOn);
+        }
+
+        private async void MaxMotorBSpeed_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        {
+            await LemurianHub.Invoke<bool>("SetMaxMotorBSpeed", (int)e.NewValue);
+        }
+
+        private async void MaxMotorASpeed_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        {
+            await LemurianHub.Invoke<bool>("SetMaxMotorASpeed", (int)e.NewValue);
+        }
+        #endregion
     }
 }

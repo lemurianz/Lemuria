@@ -101,6 +101,7 @@
     </Compile>
     <Compile Include="Models\MainPageNotifiers.cs" />
     <Compile Include="Models\MotorSpeedModels.cs" />
+    <Compile Include="Models\SettingsModels.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -20,7 +20,7 @@ namespace ShastaController.uwp.Models
             {
                 isForwardPressed = value;
                 // Call OnPropertyChanged whenever the property is updated
-                OnPropertyChanged("isForwardPressed");
+                OnPropertyChanged("IsForwardPressed");
             }
         }
 

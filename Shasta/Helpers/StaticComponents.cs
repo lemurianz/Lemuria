@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Shasta.Models;
+using Shasta.ViewModels;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -10,22 +12,6 @@ using Windows.UI.Xaml.Media;
 
 namespace Shasta.Helpers
 {
-    class LemuriaSettings
-    {
-        // Motor Driver
-        public int MaxMotorASpeed { get; set; }
-        public int MaxMotorBSpeed { get; set; }
-        // Floor Detection
-        public bool InfraSensor1 { get; set; }
-        public bool InfraSensor2 { get; set; }
-        public bool InfraSensor3 { get; set; }
-        public bool InfraSensor4 { get; set; }
-        // Object Avoidance
-        public bool SonarSensor { get; set; }
-        // Temperature
-        public bool TemperatureSensor { get; set; }
-    }
-
     class StaticComponents
     {
         // Motor pins
@@ -66,13 +52,14 @@ namespace Shasta.Helpers
 
         // Lemuria Hub
         public static bool IsLemuriaHubConnected { get; set; }
-        public static string LocalWifiHub = "http://192.168.0.57:52232/";
+        public static string LocalWifiHub = "http://192.168.0.76:52232/";
         public static bool IsAuthorised { get; set; }
         public static string UserName { get; set; }
-        public static LemuriaSettings LemuriaSettings { get; set; }
+        public static SettingsModels LemuriaSettings { get; set; }
 
         // Timer
         public static  Stopwatch StopWatch = new Stopwatch();
+        public const int FloorDetectionSensorDelay = 1000;
 
         // Oxford Face API Primary should be entered here
         // You can obtain a subscription key for Face API by following the instructions here: https://www.microsoft.com/cognitive-services/en-us/sign-up

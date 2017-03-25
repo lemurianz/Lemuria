@@ -5,6 +5,7 @@ using Microsoft.ProjectOxford.Face;
 using Sensors.Dht;
 using Shasta.Facial_Recognition;
 using Shasta.Helpers;
+using Shasta.Models;
 using Shasta.ViewModels;
 using System;
 using System.Collections.Generic;
@@ -63,6 +64,10 @@ namespace Shasta
         // The media object for controlling and playing audio.
         MediaElement mediaElement = null;
         private SpeechSynthesizer speechSynthesizer = null;
+
+        // Infra update
+        private InfraUpdateModels infraUpdate = null;
+        public IHubProxy LemurianHub = null;
 
         #endregion
 
@@ -193,17 +198,37 @@ namespace Shasta
 
         }
 
+        private void InitSettingsAndEvents()
+        {
+            infraUpdate = new InfraUpdateModels();
+
+            FrontSonar.IsOn = StaticComponents.LemuriaSettings.FrontSonar;
+            Infra1Detect.IsOn = StaticComponents.LemuriaSettings.TopLeftIR;
+            Infra2Detect.IsOn = StaticComponents.LemuriaSettings.TopRightIR;
+            Infra3Detect.IsOn = StaticComponents.LemuriaSettings.BottomLeftIR;
+            Infra4Detect.IsOn = StaticComponents.LemuriaSettings.BottomRightIR;
+            GetTemperatureHumidity.IsOn = StaticComponents.LemuriaSettings.InternalTempAndHum;
+        }
+
         private async void InitHub()
         {
             try
             {
                 var hubConnection = new HubConnection(StaticComponents.LocalWifiHub);
-                var lemuriaHub = hubConnection.CreateHubProxy("LemuriaHub");
-                lemuriaHub.On<string, int, int, int, int>("MoveRobot", MoveRobotCallback);
+                LemurianHub = hubConnection.CreateHubProxy("LemuriaHub");
+                LemurianHub.On<string, int, int, int, int>("MoveRobot", MoveRobotCallback);
+                LemurianHub.On<int>("SetMotorAMaxSpeed", SetMotorAMaxSpeedCallback);
+                LemurianHub.On<int>("SetMotorBMaxSpeed", SetMotorBMaxSpeedCallback);
+                LemurianHub.On<bool>("SetTopLeftIRSensor", SetTopLeftIRSensorCallback);
+                LemurianHub.On<bool>("SetTopRightIRSensor", SetTopRightIRSensorCallback);
+                LemurianHub.On<bool>("SetBottomLeftIRSensor", SetBottomLeftIRSensorCallback);
+                LemurianHub.On<bool>("SetBottomRightIRSensor", SetBottomRightIRSensorCallback);
                 await hubConnection.Start(new LongPollingTransport());
 
                 // Start the Lemuria
-                StaticComponents.IsLemuriaHubConnected = await lemuriaHub.Invoke<bool>("LemurianSignal", "motor");
+                StaticComponents.IsLemuriaHubConnected = await LemurianHub.Invoke<bool>("LemurianSignal", "motor");
+                StaticComponents.LemuriaSettings = await LemurianHub.Invoke<SettingsModels>("GetLemurianSettings", "motor");
+                InitSettingsAndEvents();
                 LemuriaHubStat.Text = "Connected";
                 LemuriaConnect();
             }
@@ -244,7 +269,7 @@ namespace Shasta
             motorASpeed.IsEnabled = StaticComponents.IsLemuriaHubConnected;
             motorBSpeed.IsEnabled = StaticComponents.IsLemuriaHubConnected;
             // Object Avoidance
-            SendSonar.IsEnabled = StaticComponents.IsLemuriaHubConnected;
+            FrontSonar.IsEnabled = StaticComponents.IsLemuriaHubConnected;
             // Facial Recognition
             CaptureButton.IsEnabled = StaticComponents.IsLemuriaHubConnected;
             WhitelistedUsersGridView.IsEnabled = StaticComponents.IsLemuriaHubConnected;
@@ -260,6 +285,197 @@ namespace Shasta
 
         // Call Backs from SignalR
 
+        // Infra
+        private void SetTopLeftIRSensorCallback(bool value)
+        {
+            CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+            () =>
+            {
+                StaticComponents.LemuriaSettings.TopLeftIR = value;
+                Infra2Detect.IsOn = value;
+            }).AsTask();
+        }
+        private void SetTopRightIRSensorCallback(bool value)
+        {
+            CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+            () =>
+            {
+                StaticComponents.LemuriaSettings.TopRightIR = value;
+                Infra4Detect.IsOn = value;
+            }).AsTask();
+        }
+        private void SetBottomLeftIRSensorCallback(bool value)
+        {
+            CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+            () =>
+            {
+                StaticComponents.LemuriaSettings.BottomLeftIR = value;
+                Infra1Detect.IsOn = value;
+            }).AsTask();
+        }
+        private void SetBottomRightIRSensorCallback(bool value)
+        {
+            CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+           () =>
+           {
+               StaticComponents.LemuriaSettings.BottomRightIR = value;
+                Infra3Detect.IsOn = value;
+           }).AsTask();
+        }
+
+        // Motor
+        private void SetMotorBMaxSpeedCallback(int value)
+        {
+            StaticComponents.LemuriaSettings.MaxMotorSpeedB = value;
+        }
+
+        private void SetMotorAMaxSpeedCallback(int value)
+        {
+            StaticComponents.LemuriaSettings.MaxMotorSpeedA = value;
+        }
+
+        private void MoveForward(int forward)
+        {
+            if(StaticComponents.LemuriaSettings.MaxMotorSpeedA > forward)
+                motorASpeed.Value = forward;
+            if (StaticComponents.LemuriaSettings.MaxMotorSpeedB > forward)
+                motorBSpeed.Value = forward;
+            if (forward > 0)
+            {
+                enableInputForwardA.IsOn = true;
+                enableInputForwardB.IsOn = true;
+            }
+            else
+            {
+                enableInputForwardA.IsOn = false;
+                enableInputForwardB.IsOn = false;
+            }
+        }
+
+        private void MoveBackward(int backward)
+        {
+            if (StaticComponents.LemuriaSettings.MaxMotorSpeedA > backward)
+                motorASpeed.Value = backward;
+            if (StaticComponents.LemuriaSettings.MaxMotorSpeedB > backward)
+                motorBSpeed.Value = backward;
+            if (backward > 0)
+            {
+                enableInputBackwardA.IsOn = true;
+                enableInputBackwardB.IsOn = true;
+            }
+            else
+            {
+                enableInputBackwardA.IsOn = false;
+                enableInputBackwardB.IsOn = false;
+            }
+        }
+
+        private void TurnLeft(int left)
+        {
+            if (StaticComponents.LemuriaSettings.MaxMotorSpeedA > left)
+                motorASpeed.Value = left;
+            if (left > 0)
+                enableInputForwardA.IsOn = true;
+            else enableInputForwardA.IsOn = false;
+        }
+
+        private void TurnRight(int right)
+        {
+            if (StaticComponents.LemuriaSettings.MaxMotorSpeedB > right)
+                motorBSpeed.Value = right;
+            if (right > 0)
+                enableInputForwardB.IsOn = true;
+            else enableInputForwardB.IsOn = false;
+        }
+
+        private async Task<int> IRTopLeftNotifier(int value)
+        {
+            if (!infraUpdate.InfraTopLeft)
+            {
+                value = 0;
+                await LemurianHub.Invoke("NotifyTopLeftIR", true);
+            }
+            else await LemurianHub.Invoke("NotifyTopLeftIR", false);
+            return value;
+        }
+
+        private async Task<int> IRTopRightNotifier(int value)
+        {
+            if (!infraUpdate.InfraTopRight)
+            {
+                value = 0;
+                await LemurianHub.Invoke("NotifyTopRightIR", true);
+            }
+            else await LemurianHub.Invoke("NotifyTopRightIR", false);
+            return value;
+        }
+
+        private async Task<int> IRBottomLeftNotifier(int value)
+        {
+            if (!infraUpdate.InfraBottomLeft)
+            {
+                value = 0;
+                await LemurianHub.Invoke("NotifyBottomLeftIR", true);
+            }
+            else await LemurianHub.Invoke("NotifyBottomLeftIR", false);
+            return value;
+        }
+
+        private async Task<int> IRBottomRightNotifier(int value)
+        {
+            if (!infraUpdate.InfraBottomRight)
+            {
+                value = 0;
+                await LemurianHub.Invoke("NotifyBottomRightIR", true);
+            }
+            else await LemurianHub.Invoke("NotifyBottomRightIR", false);
+            return value;
+        }
+
+        private async Task<int> IRStatusNotifier(List<string> sensors, int value)
+        {
+            foreach (var sensor in sensors)
+            {
+                if (sensor == "TopLeft")
+                    value = await IRTopLeftNotifier(value);
+                else if (sensor == "TopRight")
+                    value = await IRTopRightNotifier(value);
+                else if (sensor == "BottomLeft")
+                    value = await IRBottomLeftNotifier(value);
+                else if (sensor == "BottomRight")
+                    value = await IRBottomRightNotifier(value);
+            }
+            return value;
+        }
+
+        private int SensorPass(int value, string direction)
+        {
+            bool frontSensors = false, backSensors = false, leftSensors = false, rightSensors = false;
+            if (StaticComponents.LemuriaSettings.TopLeftIR || StaticComponents.LemuriaSettings.TopRightIR)
+            {
+                frontSensors = true;
+                leftSensors = true;
+                rightSensors = true;
+            }
+            if (StaticComponents.LemuriaSettings.BottomLeftIR || StaticComponents.LemuriaSettings.BottomRightIR)
+                backSensors = true;
+                
+
+            if (frontSensors & direction == "forward")
+                value = IRStatusNotifier(new List<string> { "TopLeft", "TopRight" }, value).Result;
+
+            if (backSensors & direction == "backward")
+                value = IRStatusNotifier(new List<string> { "BottomLeft", "BottomRight" }, value).Result;
+
+            if (leftSensors & direction == "left")
+                value = IRStatusNotifier(new List<string> { "TopLeft", "TopRight" }, value).Result;
+
+            if (rightSensors & direction == "right")
+                value = IRStatusNotifier(new List<string> { "TopLeft", "TopRight" }, value).Result;
+
+            return value;
+        }
+
         private void MoveRobotCallback(string direction, int forward, int backward, int left, int right)
         {
             CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
@@ -268,50 +484,23 @@ namespace Shasta
                 switch (direction)
                 {
                     case "forward":
-                        motorASpeed.Value = forward;
-                        motorBSpeed.Value = forward;
-                        if (forward > 0)
-                        {
-                            enableInputForwardA.IsOn = true;
-                            enableInputForwardB.IsOn = true;
-                        }
-                        else
-                        {
-                            enableInputForwardA.IsOn = false;
-                            enableInputForwardB.IsOn = false;
-                        }
+                        MoveForward(SensorPass(forward, "forward"));
                         break;
                     case "backward":
-                        motorASpeed.Value = backward;
-                        motorBSpeed.Value = backward;
-                        if (backward > 0)
-                        {
-                            enableInputBackwardA.IsOn = true;
-                            enableInputBackwardB.IsOn = true;
-                        }
-                        else
-                        {
-                            enableInputBackwardA.IsOn = false;
-                            enableInputBackwardB.IsOn = false;
-                        }
+                        MoveBackward(SensorPass(backward, "backward"));
                         break;
                     case "left":
-                        motorASpeed.Value = left;
-                        if(left > 0)
-                            enableInputForwardA.IsOn = true;
-                        else enableInputForwardA.IsOn = false;
+                        TurnLeft(SensorPass(left, "left"));
                         break;
                     case "right":
-                        motorBSpeed.Value = right;
-                        if (right > 0)
-                            enableInputForwardB.IsOn = true;
-                        else enableInputForwardB.IsOn = false;
+                        TurnRight(SensorPass(right, "right"));
                         break;
                     default:
                         break;
                 }
             }).AsTask();
         }
+        
 
         // UI Events
 
@@ -399,12 +588,12 @@ namespace Shasta
 
         #region Object Avoidance
 
-        private void SendSonar_Toggled(object sender, RoutedEventArgs e)
+        private void FrontSonar_Toggled(object sender, RoutedEventArgs e)
         {
             CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
             async () =>
             {
-                while (SendSonar.IsOn)
+                while (FrontSonar.IsOn)
                 {
                     // Your UI update code goes here!
                     await StaticMethods.SendPulse();
@@ -415,10 +604,11 @@ namespace Shasta
                     else
                         SonarLog.Text = "Out Of Range";        //display out of range
 
-                    await Task.Delay(100);
+                    await LemurianHub.Invoke("NotifySonarDistance", distance);
+                    await Task.Delay(500);
                 }
 
-                if (!SendSonar.IsOn)
+                if (!FrontSonar.IsOn)
                 {
                     SonarLog.Text = "Distance";
                 }
@@ -716,7 +906,7 @@ namespace Shasta
         {
             bool hasObject = false;
 
-            if (StaticComponents.infra2Pin.Read() == GpioPinValue.High)
+            if (StaticComponents.infra3Pin.Read() == GpioPinValue.High)
                 hasObject = true;
 
             return Task.FromResult<bool>(hasObject);
@@ -736,13 +926,18 @@ namespace Shasta
         {
             while (Infra1Detect.IsOn)
             {
-                if (await HasInfra1Obstacle())
+                if (!await HasInfra1Obstacle())
                 {
                     Infra1Detected.Text = "Obstacle Detected";
+                    infraUpdate.InfraBottomLeft = true;
                 }
-                else Infra1Detected.Text = "No Obstacle";
+                else
+                {
+                    Infra1Detected.Text = "No Obstacle";
+                    infraUpdate.InfraBottomLeft = false;
+                }
 
-                await Task.Delay(1000);
+                await Task.Delay(StaticComponents.FloorDetectionSensorDelay);
             }
         }
 
@@ -750,41 +945,56 @@ namespace Shasta
         {
             while (Infra2Detect.IsOn)
             {
-                if (await HasInfra2Obstacle())
+                if (!await HasInfra2Obstacle())
                 {
                     Infra2Detected.Text = "Obstacle Detected";
+                    infraUpdate.InfraTopLeft = true;
                 }
-                else Infra2Detected.Text = "No Obstacle";
+                else
+                {
+                    Infra2Detected.Text = "No Obstacle";
+                    infraUpdate.InfraTopLeft = false;
+                }
 
-                await Task.Delay(1000);
+                await Task.Delay(StaticComponents.FloorDetectionSensorDelay);
             }
         }
 
         private async void Infra3Detect_Toggled(object sender, RoutedEventArgs e)
         {
-            while (Infra1Detect.IsOn)
+            while (Infra3Detect.IsOn)
             {
-                if (await HasInfra3Obstacle())
+                if (!await HasInfra3Obstacle())
                 {
                     Infra3Detected.Text = "Obstacle Detected";
+                    infraUpdate.InfraBottomRight = true;
                 }
-                else Infra3Detected.Text = "No Obstacle";
+                else
+                {
+                    Infra3Detected.Text = "No Obstacle";
+                    infraUpdate.InfraBottomRight = false;
+                }
 
-                await Task.Delay(1000);
+                await Task.Delay(StaticComponents.FloorDetectionSensorDelay);
             }
         }
 
         private async void Infra4Detect_Toggled(object sender, RoutedEventArgs e)
         {
-            while (Infra1Detect.IsOn)
+            while (Infra4Detect.IsOn)
             {
-                if (await HasInfra4Obstacle())
+                if (!await HasInfra4Obstacle())
                 {
                     Infra4Detected.Text = "Obstacle Detected";
+                    infraUpdate.InfraTopRight = true;
                 }
-                else Infra4Detected.Text = "No Obstacle";
+                else
+                {
+                    Infra4Detected.Text = "No Obstacle";
+                    infraUpdate.InfraTopRight = false;
+                }
 
-                await Task.Delay(1000);
+                await Task.Delay(StaticComponents.FloorDetectionSensorDelay);
             }
         }
 
