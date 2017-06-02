@@ -8,6 +8,8 @@ namespace Shasta.Models
 {
     public class SettingsModels
     {
+        public int StartMotorSpeedA { get; set; }
+        public int StartMotorSpeedB { get; set; }
         public int MaxMotorSpeedA { get; set; }
         public int MaxMotorSpeedB { get; set; }
         public bool TopLeftIR { get; set; }

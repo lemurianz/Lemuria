@@ -52,7 +52,7 @@ namespace Shasta.Helpers
 
         // Lemuria Hub
         public static bool IsLemuriaHubConnected { get; set; }
-        public static string LocalWifiHub = "http://192.168.0.76:52232/";
+        public static string LocalWifiHub = "http://192.168.0.81:52232/";
         public static bool IsAuthorised { get; set; }
         public static string UserName { get; set; }
         public static SettingsModels LemuriaSettings { get; set; }
@@ -60,6 +60,8 @@ namespace Shasta.Helpers
         // Timer
         public static  Stopwatch StopWatch = new Stopwatch();
         public const int FloorDetectionSensorDelay = 1000;
+        public const int ObjectAvoidanceSensorDelay = 50;
+        public const int TempHumSensorDelay = 2000;
 
         // Oxford Face API Primary should be entered here
         // You can obtain a subscription key for Face API by following the instructions here: https://www.microsoft.com/cognitive-services/en-us/sign-up

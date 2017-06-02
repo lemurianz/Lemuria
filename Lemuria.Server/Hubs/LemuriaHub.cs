@@ -76,6 +76,15 @@ namespace Lemuria.Server.Hubs
             else return false;
         }
 
+        private bool MotorControllerPass()
+        {
+            var masterId = SignalRClients["master"];
+            var motorId = SignalRClients["motor"];
+            if (motorId == this.Context.ConnectionId & !string.IsNullOrEmpty(masterId))
+                return true;
+            else return false;
+        }
+
         // Set the settings
         public bool SetMaxMotorASpeed(int value)
         {
@@ -92,6 +101,26 @@ namespace Lemuria.Server.Hubs
             {
                 Settings.MaxMotorSpeedB = value;
                 this.Clients.Client(SignalRClients["motor"]).SetMotorBMaxSpeed(Settings.MaxMotorSpeedB);
+            }
+            return true;
+        }
+
+        public bool SetStartMotorASpeed(int value)
+        {
+            if (ControllerMotorPass())
+            {
+                Settings.StartMotorSpeedA = value;
+                this.Clients.Client(SignalRClients["motor"]).SetStartMotorASpeed(Settings.StartMotorSpeedA);
+            }
+            return true;
+        }
+
+        public bool SetStartMotorBSpeed(int value)
+        {
+            if (ControllerMotorPass())
+            {
+                Settings.StartMotorSpeedB = value;
+                this.Clients.Client(SignalRClients["motor"]).SetStartMotorBSpeed(Settings.StartMotorSpeedB);
             }
             return true;
         }
@@ -163,27 +192,38 @@ namespace Lemuria.Server.Hubs
         // Set Notifications to Controller
         public void NotifyTopLeftIR(bool value)
         {
-            this.Clients.Client(SignalRClients["master"]).NotifyTopLeftIR(value);
+            if (MotorControllerPass())
+                this.Clients.Client(SignalRClients["master"]).NotifyTopLeftIR(value);
         }
 
         public void NotifyTopRightIR(bool value)
         {
-            this.Clients.Client(SignalRClients["master"]).NotifyTopRightIR(value);
+            if (MotorControllerPass())
+                this.Clients.Client(SignalRClients["master"]).NotifyTopRightIR(value);
         }
 
         public void NotifyBottomLeftIR(bool value)
         {
-            this.Clients.Client(SignalRClients["master"]).NotifyBottomLeftIR(value);
+            if (MotorControllerPass())
+                this.Clients.Client(SignalRClients["master"]).NotifyBottomLeftIR(value);
         }
 
         public void NotifyBottomRightIR(bool value)
         {
-            this.Clients.Client(SignalRClients["master"]).NotifyBottomRightIR(value);
+            if (MotorControllerPass())
+                this.Clients.Client(SignalRClients["master"]).NotifyBottomRightIR(value);
         }
 
         public void NotifySonarDistance(double distance)
         {
-            this.Clients.Client(SignalRClients["master"]).NotifySonarDistance(distance);
+            if (MotorControllerPass())
+                this.Clients.Client(SignalRClients["master"]).NotifySonarDistance(distance);
+        }
+
+        public void NotifyTemperatureHumidity(double temperature, double humidity)
+        {
+            if (MotorControllerPass())
+                this.Clients.Client(SignalRClients["master"]).NotifyTemperatureHumidity(temperature, humidity);
         }
 
     }

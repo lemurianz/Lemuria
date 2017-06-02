@@ -628,18 +628,27 @@
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="auto"></RowDefinition>
                                     <RowDefinition Height="auto"></RowDefinition>
+                                    <RowDefinition Height="auto"></RowDefinition>
                                 </Grid.RowDefinitions>
 
-                                <StackPanel Padding="0,10,20,0">
+                                <StackPanel Grid.Row="0" Padding="0,10,20,0">
+                                    <Slider Background="White" Style="{StaticResource SliderStyle}" Value="0" x:Name="StartMotorASpeed"></Slider>
+                                    <TextBlock Text="Motor A Start Speed" FontSize="12" FontWeight="Medium"></TextBlock>
+                                </StackPanel>
+                                <StackPanel Grid.Row="0" Grid.Column="1" Padding="0,10,20,0">
+                                    <Slider Background="White" Style="{StaticResource SliderStyle}" Value="0" x:Name="StartMotorBSpeed"></Slider>
+                                    <TextBlock Text="Motor B Start Speed" FontSize="12" FontWeight="Medium"></TextBlock>
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" Padding="0,10,20,0">
                                     <Slider Background="White" Style="{StaticResource SliderStyle}" x:Name="MaxMotorASpeed"></Slider>
                                     <TextBlock Text="Motor A Speed" FontSize="12" FontWeight="Medium"></TextBlock>
                                 </StackPanel>
-                                <StackPanel Grid.Column="1" Padding="0,10,20,0">
+                                <StackPanel Grid.Row="1" Grid.Column="1" Padding="0,10,20,0">
                                     <Slider Background="White" Style="{StaticResource SliderStyle}" x:Name="MaxMotorBSpeed"></Slider>
                                     <TextBlock Text="Motor B Speed" FontSize="12" FontWeight="Medium"></TextBlock>
                                 </StackPanel>
 
-                                <TextBlock Grid.Row="1" Grid.ColumnSpan="2" Text="Note: increasing the motor speed increases the voltage passed to L239D chip" FontSize="10" FontWeight="Normal"></TextBlock>
+                                <TextBlock Grid.Row="2" Grid.ColumnSpan="2" Text="Note: increasing the motor speed increases the voltage passed to L239D chip" FontSize="10" FontWeight="Normal"></TextBlock>
                             </Grid>
                         </StackPanel>
                         <StackPanel Margin="0,0,0,15">

@@ -134,6 +134,7 @@ namespace ShastaController.uwp
                 LemurianHub.On<bool>("NotifyBottomLeftIR", NotifyBottomLeftIRCallback);
                 LemurianHub.On<bool>("NotifyBottomRightIR", NotifyBottomRightIRCallback);
                 LemurianHub.On<double>("NotifySonarDistance", NotifySonarDistanceCallback);
+                LemurianHub.On<double, double>("NotifyTemperatureHumidity", NotifyTemperatureHumidityCallback);
                 await hubConnection.Start(new LongPollingTransport());
 
                 // Start the Lemuria
@@ -199,7 +200,24 @@ namespace ShastaController.uwp
             CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
             () =>
             {
-                DistanceTextblock.Text = value.ToString();
+                if (value == 0)
+                    DistanceTextblock.Text = "Distance";
+                else DistanceTextblock.Text = value.ToString();
+            }).AsTask();
+        }
+
+        private void NotifyTemperatureHumidityCallback(double value1, double value2)
+        {
+            CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+            () =>
+            {
+                if (value1 == 0)
+                    TemperatureTextblock.Text = "Temperature";
+                else TemperatureTextblock.Text = value1.ToString() + " °C";
+
+                if (value2 == 0)
+                    HumidityTextblock.Text = "Humidity";
+                else HumidityTextblock.Text = value2.ToString() + " RH";
             }).AsTask();
         }
 
@@ -321,6 +339,10 @@ namespace ShastaController.uwp
             if (notifiers.IsForwardPressed)
             {
                 ResetAllSpeeds();
+                if (StartMotorASpeed.Value < StartMotorBSpeed.Value)
+                    speed.ForwardSpeed = (int)StartMotorASpeed.Value;
+                else speed.ForwardSpeed = (int)StartMotorBSpeed.Value;
+
                 while (notifiers.IsForwardPressed)
                 {
                     if (speed.ForwardSpeed > MaxMotorASpeed.Value) MotorATextblock.Text = "◈";
@@ -344,6 +366,10 @@ namespace ShastaController.uwp
             if (notifiers.IsBackwardPressed)
             {
                 ResetAllSpeeds();
+
+                if (StartMotorASpeed.Value < StartMotorBSpeed.Value)
+                    speed.BackwardSpeed = (int)StartMotorASpeed.Value;
+                else speed.BackwardSpeed = (int)StartMotorBSpeed.Value;
                 while (notifiers.IsBackwardPressed)
                 {
                     if (speed.BackwardSpeed > MaxMotorASpeed.Value) MotorATextblock.Text = "◈";
@@ -601,9 +627,11 @@ namespace ShastaController.uwp
             TemperatureHumiditySensor.IsOn = model.InternalTempAndHum;
             //face detection
             FaceDetectionCamera.IsOn = model.FaceDetect;
-            
+
             // Setup events
             //motor
+            StartMotorASpeed.ValueChanged += StartMotorASpeed_ValueChanged;
+            StartMotorBSpeed.ValueChanged += StartMotorBSpeed_ValueChanged;
             MaxMotorASpeed.ValueChanged += MaxMotorASpeed_ValueChanged;
             MaxMotorBSpeed.ValueChanged += MaxMotorBSpeed_ValueChanged;
             //ir sensors
@@ -665,6 +693,16 @@ namespace ShastaController.uwp
         {
             UpdateIRStatus();
             await LemurianHub.Invoke<bool>("SetTopLeftIRSensor", ((ToggleSwitch)sender).IsOn);
+        }
+
+        private async void StartMotorBSpeed_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        {
+            await LemurianHub.Invoke<bool>("SetStartMotorBSpeed", (int)e.NewValue);
+        }
+
+        private async void StartMotorASpeed_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        {
+            await LemurianHub.Invoke<bool>("SetStartMotorASpeed", (int)e.NewValue);
         }
 
         private async void MaxMotorBSpeed_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)

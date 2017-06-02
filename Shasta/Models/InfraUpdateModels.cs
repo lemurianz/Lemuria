@@ -12,5 +12,6 @@ namespace Shasta.Models
         public bool InfraTopRight { get; set; }
         public bool InfraBottomLeft { get; set; }
         public bool InfraBottomRight { get; set; }
+        public bool FrontSonar { get; set; }
     }
 }
