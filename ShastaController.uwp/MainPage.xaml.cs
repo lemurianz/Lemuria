@@ -53,6 +53,14 @@ namespace ShastaController.uwp
             ApplicationView.PreferredLaunchViewSize = new Size(700, 450);
             ApplicationView.PreferredLaunchWindowingMode = ApplicationViewWindowingMode.PreferredLaunchViewSize;
 
+            // When the app loses focus make sure to shut down the bot
+            Window.Current.Activated += Current_Activated;
+        }
+
+        private void Current_Activated(object sender, WindowActivatedEventArgs e)
+        {
+            if (e.WindowActivationState == CoreWindowActivationState.Deactivated)
+                ResetAllSpeedNotifiers("");
         }
 
         private void MainPage_KeyUp(CoreWindow sender, KeyEventArgs args)
@@ -118,7 +126,7 @@ namespace ShastaController.uwp
         async void TryConnectToLEDStrips()
         {
             IRTopLeftTextblock.Text = "Connecting";
-            await ledStripLights.ConnectAsync("192.168.0.59", "5000");
+            await ledStripLights.ConnectAsync("192.168.0.18", "5000");
             IRTopLeftTextblock.Text = "Connected";
         }
 
@@ -347,18 +355,22 @@ namespace ShastaController.uwp
                 {
                     if (speed.ForwardSpeed > MaxMotorASpeed.Value) MotorATextblock.Text = "◈";
                     if (speed.ForwardSpeed > MaxMotorBSpeed.Value) MotorBTextblock.Text = "◈";
-                    if (speed.ForwardSpeed < 100)
+                    if (speed.ForwardSpeed < 99)
                     {
                         DirectionTextblock.Text = "⮝";
                         SpeedTextblock.Text = speed.ForwardSpeed.ToString();
                         speed.ForwardSpeed += 1;
                     }
-                    await Task.Delay(250);
+                    else speed.ForwardSpeed -= 1;
+                    await Task.Delay(750);
 
                     LemurianMove("forward", speed);
                 }
             }
-            else speed.ForwardSpeed = MovementStopped();
+            else
+            {
+                speed.ForwardSpeed = MovementStopped();
+            }
         }
 
         private async void MoveBackward()
@@ -374,13 +386,14 @@ namespace ShastaController.uwp
                 {
                     if (speed.BackwardSpeed > MaxMotorASpeed.Value) MotorATextblock.Text = "◈";
                     if (speed.BackwardSpeed > MaxMotorBSpeed.Value) MotorBTextblock.Text = "◈";
-                    if (speed.BackwardSpeed < 100)
+                    if (speed.BackwardSpeed < 99)
                     {
                         SpeedTextblock.Text = speed.BackwardSpeed.ToString();
                         DirectionTextblock.Text = "⮟";
                         speed.BackwardSpeed += 1;
                     }
-                    await Task.Delay(250);
+                    else speed.BackwardSpeed -= 1;
+                    await Task.Delay(750);
 
                     LemurianMove("backward", speed);
                 }
@@ -393,6 +406,9 @@ namespace ShastaController.uwp
             if (notifiers.IsLeftPressed)
             {
                 ResetAllSpeeds();
+                if (StartMotorASpeed.Value < StartMotorBSpeed.Value)
+                    speed.LeftSpeed = (int)StartMotorASpeed.Value;
+                else speed.LeftSpeed = (int)StartMotorBSpeed.Value;
                 while (notifiers.IsLeftPressed)
                 {
                     if (speed.LeftSpeed > MaxMotorASpeed.Value) MotorATextblock.Text = "◈";
@@ -402,7 +418,8 @@ namespace ShastaController.uwp
                         DirectionTextblock.Text = "⮜";
                         speed.LeftSpeed += 1;
                     }
-                    await Task.Delay(250);
+                    else speed.LeftSpeed -= 1;
+                    await Task.Delay(750);
 
                     LemurianMove("left", speed);
                 }
@@ -415,6 +432,9 @@ namespace ShastaController.uwp
             if (notifiers.IsRightPressed)
             {
                 ResetAllSpeeds();
+                if (StartMotorASpeed.Value < StartMotorBSpeed.Value)
+                    speed.RightSpeed = (int)StartMotorASpeed.Value;
+                else speed.RightSpeed = (int)StartMotorBSpeed.Value;
                 while (notifiers.IsRightPressed)
                 {
                     if (speed.RightSpeed > MaxMotorBSpeed.Value) MotorBTextblock.Text = "◈";
@@ -424,7 +444,8 @@ namespace ShastaController.uwp
                         DirectionTextblock.Text = "⮞";
                         speed.RightSpeed += 1;
                     }
-                    await Task.Delay(250);
+                    else speed.RightSpeed -= 1;
+                    await Task.Delay(750);
 
                     LemurianMove("right", speed);
                 }

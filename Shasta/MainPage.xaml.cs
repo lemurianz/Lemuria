@@ -2,6 +2,7 @@
 using Microsoft.AspNet.SignalR.Client.Transports;
 using Microsoft.IoT.Lightning.Providers;
 using Microsoft.ProjectOxford.Face;
+using Newtonsoft.Json;
 using Sensors.Dht;
 using Shasta.Facial_Recognition;
 using Shasta.Helpers;
@@ -14,14 +15,17 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.Core;
 using Windows.Devices;
+using Windows.Devices.Enumeration;
 using Windows.Devices.Gpio;
 using Windows.Devices.Pwm;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
+using Windows.Media.Devices;
 using Windows.Media.SpeechSynthesis;
 using Windows.Storage;
 using Windows.UI;
@@ -62,11 +66,11 @@ namespace Shasta
         private IDht _dhtInterface = null;
 
         // The media object for controlling and playing audio.
-        MediaElement mediaElement = null;
         private SpeechSynthesizer speechSynthesizer = null;
+        private List<string> textReadback = new List<string>();
 
         // Infra update
-        private InfraUpdateModels infraUpdate = null;
+        private InfraSonarUpdateModels infraUpdate = null;
         public IHubProxy LemurianHub = null;
 
         #endregion
@@ -77,7 +81,7 @@ namespace Shasta
             ApplicationView.PreferredLaunchViewSize = new Size(800, 480);
             ApplicationView.PreferredLaunchWindowingMode = ApplicationViewWindowingMode.PreferredLaunchViewSize; 
             speechSynthesizer = new SpeechSynthesizer();
-            mediaElement = new MediaElement();
+            MediaDevice.DefaultAudioRenderDeviceChanged += MediaDevice_DefaultAudioRenderDeviceChanged;
             //ReadText("Hi, I am " + speechSynthesizer.Voice.DisplayName);
             //StaticComponents.IsLemuriaHubConnected = true;
             LemuriaConnect();
@@ -89,14 +93,7 @@ namespace Shasta
             InitGPIO();
             InitHelpers();
             InitOxford();
-        }
-
-        private async void ReadText(string text)
-        {
-            SpeechSynthesisStream voiceStream = await speechSynthesizer.SynthesizeTextToStreamAsync(text);
-            voiceStream.Seek(0);
-            mediaElement.SetSource(voiceStream, voiceStream.ContentType);
-            mediaElement.Play();
+            UpdateSpeakerStatus();
         }
 
         #region Initialize
@@ -185,7 +182,7 @@ namespace Shasta
 
                 GpioStatus.Text = status + "GPIO pins initialized correctly.";
 
-                ReadText(GpioStatus.Text);
+                ReadText(GpioStatus.Text, true);
 
                 // Initialize the Lemuria Hub
                 LemuriaHubStat.Text = "Loading";
@@ -200,8 +197,8 @@ namespace Shasta
 
         private void InitSettingsAndEvents()
         {
-            infraUpdate = new InfraUpdateModels();
-
+            infraUpdate = new InfraSonarUpdateModels();
+            infraUpdate.FrontSonarDistance = 500;
             FrontSonar.IsOn = StaticComponents.LemuriaSettings.FrontSonar;
             Infra1Detect.IsOn = StaticComponents.LemuriaSettings.TopLeftIR;
             Infra2Detect.IsOn = StaticComponents.LemuriaSettings.TopRightIR;
@@ -346,6 +343,25 @@ namespace Shasta
             StaticComponents.LemuriaSettings.MaxMotorSpeedA = value;
         }
 
+        private void ResetDirection(string direction, bool insist)
+        {
+            if(insist)
+                ReadText("I cant move any further in " + direction + " direction", false);
+
+            if (direction == "forward")
+                ForwardIndicator.Foreground = StaticComponents.inactiveBrush;
+            else if (direction == "backward")
+                ForwardIndicator.Foreground = StaticComponents.inactiveBrush;
+            else if (direction == "left")
+                LeftIndicator.Foreground = StaticComponents.inactiveBrush;
+            else RightIndicator.Foreground = StaticComponents.inactiveBrush;
+
+            motorASpeed.Value = 0;
+            motorBSpeed.Value = 0;
+            enableInputForwardA.IsOn = false;
+            enableInputForwardB.IsOn = false;
+        }
+
         private void MoveForward(int forward)
         {
             if(StaticComponents.LemuriaSettings.MaxMotorSpeedA > forward
@@ -360,14 +376,7 @@ namespace Shasta
                 enableInputForwardB.IsOn = true;
                 ForwardIndicator.Foreground = StaticComponents.activeBrush;
             }
-            else
-            {
-                motorASpeed.Value = forward;
-                motorBSpeed.Value = forward;
-                enableInputForwardA.IsOn = false;
-                enableInputForwardB.IsOn = false;
-                ForwardIndicator.Foreground = StaticComponents.inactiveBrush;
-            }
+            else ResetDirection("forward", false);
         }
 
         private void MoveBackward(int backward)
@@ -384,14 +393,7 @@ namespace Shasta
                 enableInputBackwardB.IsOn = true;
                 BackwardIndicator.Foreground = StaticComponents.activeBrush;
             }
-            else
-            {
-                motorASpeed.Value = backward;
-                motorBSpeed.Value = backward;
-                enableInputBackwardA.IsOn = false;
-                enableInputBackwardB.IsOn = false;
-                BackwardIndicator.Foreground = StaticComponents.inactiveBrush;
-            }
+            else ResetDirection("backward", false);
         }
 
         private void TurnLeft(int left)
@@ -404,12 +406,7 @@ namespace Shasta
                 enableInputForwardA.IsOn = true;
                 LeftIndicator.Foreground = StaticComponents.activeBrush;
             }
-            else
-            {
-                motorASpeed.Value = left;
-                enableInputForwardA.IsOn = false;
-                LeftIndicator.Foreground = StaticComponents.inactiveBrush;
-            }
+            else ResetDirection("left", false);
         }
 
         private void TurnRight(int right)
@@ -422,12 +419,7 @@ namespace Shasta
                 enableInputForwardB.IsOn = true;
                 RightIndicator.Foreground = StaticComponents.activeBrush;
             }
-            else
-            {
-                motorBSpeed.Value = right;
-                enableInputForwardB.IsOn = false;
-                RightIndicator.Foreground = StaticComponents.inactiveBrush;
-            }
+            else ResetDirection("right", false);
         }
 
 
@@ -494,19 +486,22 @@ namespace Shasta
                 switch (direction)
                 {
                     case "forward":
-                        if(infraUpdate.FrontSonar)
+                        if (infraUpdate.FrontSonarDistance > 50)
                             MoveForward(await SensorPass(forward, "forward"));
+                        else ResetDirection("forward", true);
                         break;
                     case "backward":
                         MoveBackward(await SensorPass(backward, "backward"));
                         break;
                     case "left":
-                        if (infraUpdate.FrontSonar)
+                        if (infraUpdate.FrontSonarDistance > 50)
                             TurnLeft(await SensorPass(left, "left"));
+                        else ResetDirection("left", true);
                         break;
                     case "right":
-                        if (infraUpdate.FrontSonar)
+                        if (infraUpdate.FrontSonarDistance > 50)
                             TurnRight(await SensorPass(right, "right"));
+                        else ResetDirection("right", true);
                         break;
                     default:
                         break;
@@ -584,7 +579,7 @@ namespace Shasta
             if (enableInputBackwardB.IsOn)
             {
                 enableInputForwardB.IsOn = false;
-                StaticMethods.enableMotorB(true, false, enableInputBackwardB.IsOn);
+                StaticMethods.enableMotorB(false, true, enableInputBackwardB.IsOn);
             }
             else TurnOffMotorB();
         }
@@ -604,9 +599,7 @@ namespace Shasta
                     await StaticMethods.SendPulse();
                     var distance = StaticMethods.ReceivePulse();
 
-                    if (distance > 0 & distance < 15)
-                        infraUpdate.FrontSonar = false;
-                    else infraUpdate.FrontSonar = true;
+                    infraUpdate.FrontSonarDistance = distance;
 
                     if (distance > 2 && distance < 30)         //Check whether the distance is within range
                         SonarLog.Text = distance + " cm";      //Print distance with 0.5 cm calibration
@@ -619,7 +612,7 @@ namespace Shasta
 
                 if (!FrontSonar.IsOn)
                 {
-                    infraUpdate.FrontSonar = false;
+                    infraUpdate.FrontSonarDistance = 500;
                     SonarLog.Text = "Distance";
                 }
             }).AsTask();
@@ -1054,5 +1047,174 @@ namespace Shasta
         }
 
         #endregion
+
+        #region Speakers
+        private async void ReadText(string text, bool backlog)
+        {
+            if (mediaElement.CurrentState != MediaElementState.Playing)
+            {
+                SpeechSynthesisStream voiceStream = await speechSynthesizer.SynthesizeTextToStreamAsync(text);
+                voiceStream.Seek(0);
+                mediaElement.SetSource(voiceStream, voiceStream.ContentType);
+                mediaElement.Play();
+            }
+            else
+            {
+                if (backlog)
+                    textReadback.Add(text);
+            }
+        }
+
+        private void MediaElement_CurrentStateChanged(object sender, RoutedEventArgs e)
+        {
+            if (mediaElement.CurrentState == MediaElementState.Stopped)
+            {
+                if (textReadback.Count > 0)
+                {
+                    ReadText(textReadback[0], false);
+                    textReadback.RemoveAt(0);
+                }
+            }
+        }
+
+        private void MediaDevice_DefaultAudioRenderDeviceChanged(object sender, DefaultAudioRenderDeviceChangedEventArgs args)
+        {
+            UpdateSpeakerStatus();
+        }
+
+        private async void UpdateSpeakerStatus()
+        {
+            var id = MediaDevice.GetDefaultAudioRenderId(AudioDeviceRole.Communications);
+            if (!string.IsNullOrEmpty(id))
+            {
+                var deviceInfo = await DeviceInformation.CreateFromIdAsync(id);
+                ReadingStatus.Text = deviceInfo.Name;
+                ReadClick.IsEnabled = true;
+                SpeakVolume.Visibility = Visibility.Visible;
+                mediaElement.Volume = 0.30;
+                SpeakVolume.Value = mediaElement.Volume * 100;
+            }
+            else
+            {
+                ReadClick.IsEnabled = false;
+                SpeakVolume.Visibility = Visibility.Collapsed;
+                ReadingStatus.Text = "No audio device detected";
+            }
+        }
+
+        private void SpeakVolume_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        {
+            mediaElement.Volume = SpeakVolume.Value/100;
+        }
+
+        private void ReadClick_Click(object sender, RoutedEventArgs e)
+        {
+            ReadText(TextToRead.Text, false);
+        }
+
+
+        private void DefaultReadClick_Click(object sender, RoutedEventArgs e)
+        {
+            TextToRead.Text = "I am 'B cube Box Head' and I am loving it!";
+        }
+
+        private async void WeatherReadClick_Click(object sender, RoutedEventArgs e)
+        {
+            var weather = await GetWeather("Reading", "UK");
+            if (weather != null)
+                TextToRead.Text = "The weather is currently " + weather.main.temp + " degrees and has " + weather.weather.First().description;
+        }
+
+        private async void YoutubeReadClick_Click(object sender, RoutedEventArgs e)
+        {
+            var youtube = await GetYoutubeTrending(10, "GB");
+            if (youtube != null)
+            {
+                var text = "Top trending music videos in UK are ";
+                for (int i = 0; i < youtube.items.Count; i++)
+                {
+                    var punctuation = "";
+                    if (youtube.items.Count == i + 2)
+                        punctuation = " and ";
+                    else if (youtube.items.Count == i + 1)
+                        punctuation = ".";
+                    else punctuation = ", ";
+
+                    var item = youtube.items[i];
+                    text += item.snippet.title + punctuation;
+                }
+
+                TextToRead.Text = text;
+            }
+        }
+        #endregion
+
+        // Screen Saver
+        private void ScreenSaver_PointerPressed(object sender, PointerRoutedEventArgs e)
+        {
+            ScreenSaver.Visibility = Visibility.Collapsed;
+            ContentGrid.Visibility = Visibility.Visible;
+        }
+
+        private void ContentToScreenSaver_Click(object sender, RoutedEventArgs e)
+        {
+            ScreenSaver.Visibility = Visibility.Visible;
+            ContentGrid.Visibility = Visibility.Collapsed;
+        }
+
+        // Common information
+        private async Task<WeatherModels> GetWeather(string city, string country)
+        {
+            WeatherModels weather = null;
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    //HTTP get
+                    var url = StaticComponents.OpenWeatherURL + "&q=" + WebUtility.UrlEncode(city) + "," + WebUtility.UrlEncode(country) + StaticComponents.OpenWeatherAPIKey;
+                    HttpResponseMessage response = await client.GetAsync(url);
+                    response.EnsureSuccessStatusCode();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var jsonString = response.Content.ReadAsStringAsync().Result;
+                        weather = JsonConvert.DeserializeObject<WeatherModels>(jsonString);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                weather = null;
+            }
+
+            return weather;
+        }
+
+        private async Task<YoutubeModels> GetYoutubeTrending(int videoCategoryID, string country)
+        {
+            YoutubeModels youtube = null;
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    //HTTP get
+                    var url = StaticComponents.YoutubeURL + "&videoCategoryId=" + videoCategoryID + "&regionCode=" + WebUtility.UrlEncode(country) + StaticComponents.YoutubeAPIKey;
+                    HttpResponseMessage response = await client.GetAsync(url);
+                    response.EnsureSuccessStatusCode();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var jsonString = response.Content.ReadAsStringAsync().Result;
+                        youtube = JsonConvert.DeserializeObject<YoutubeModels>(jsonString);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                youtube = null;
+            }
+
+            return youtube;
+        }
     }
 }

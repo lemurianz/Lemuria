@@ -82,6 +82,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"></RowDefinition>
             <RowDefinition Height="*"></RowDefinition>
+            <RowDefinition Height="0"></RowDefinition>
         </Grid.RowDefinitions>
         <Grid Padding="0,40,40,0">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
@@ -90,7 +91,11 @@
             </StackPanel>
         </Grid>
 
-        <Grid Grid.Row="1" Padding="30, 10,30,30">
+        <Image x:Name="ScreenSaver" Grid.Row="1" Visibility="Collapsed" Source="Assets/Brain.jpg"
+               PointerPressed="ScreenSaver_PointerPressed"></Image>
+        
+        <Grid x:Name="ContentGrid" Grid.Row="1" Padding="30, 10,30,30"
+              Visibility="Visible">
             <Pivot>
                 <PivotItem Header="Overview">
                     <StackPanel Orientation="Vertical" VerticalAlignment="Center" Width="250">
@@ -115,6 +120,9 @@
                             </Grid>
                         </StackPanel>
                         <TextBlock x:Name="SonarLog" HorizontalAlignment="Center" Padding="10" Text="Distance"></TextBlock>
+                        <Button x:Name="ContentToScreenSaver" Click="ContentToScreenSaver_Click"  Style="{StaticResource ButtonStyleRound}" 
+                                Content="" FontSize="32" Padding="15,10" FontFamily="Segoe UI Symbol"
+                                HorizontalAlignment="Center"></Button>
                     </StackPanel>
                 </PivotItem>
                 <PivotItem Header="Motor">
@@ -237,7 +245,35 @@
                         <TextBlock x:Name="HumidityText" Text="Humidity"></TextBlock>
                     </StackPanel>
                 </PivotItem>
+                <PivotItem Header="Speakers">
+                    <StackPanel Padding="0,15">
+                        <TextBlock TextWrapping="Wrap" x:Name="TextToRead" Text="I am 'B cube Box Head' and I am loving it!"></TextBlock>
+                        <StackPanel Orientation="Horizontal">
+                            <Button x:Name="ReadClick" IsEnabled="False" Click="ReadClick_Click"  
+                                    Style="{StaticResource ButtonStyleRound}" Content="" FontSize="32" 
+                                    Padding="15,10" Margin="0,20" FontFamily="Segoe UI Symbol">
+                            </Button>
+                            <Button x:Name="DefaultReadClick" Click="DefaultReadClick_Click"  
+                                    Style="{StaticResource ButtonStyleRound}" Content="" FontSize="32" 
+                                    Padding="15,10" Margin="10,20" FontFamily="Segoe UI Symbol">
+                            </Button>
+                            <Button x:Name="WeatherReadClick" Click="WeatherReadClick_Click"  
+                                    Style="{StaticResource ButtonStyleRound}" Content="" FontSize="32" 
+                                    Padding="15,10" Margin="10,20" FontFamily="Segoe UI Symbol">
+                            </Button>
+                            <Button x:Name="YoutubeReadClick" Click="YoutubeReadClick_Click"  
+                                    Style="{StaticResource ButtonStyleRound}" Content="" FontSize="32" 
+                                    Padding="15,10" Margin="10,20" FontFamily="Segoe UI Symbol">
+                            </Button>
+                        </StackPanel>
+                        <TextBlock x:Name="ReadingStatus" Text=""></TextBlock>
+                        <Slider x:Name="SpeakVolume" Visibility="Collapsed" Padding="0,0,30,0" ValueChanged="SpeakVolume_ValueChanged"  Minimum="0" Maximum="100" MinWidth="200"/>
+                    </StackPanel>
+                </PivotItem>
             </Pivot>
         </Grid>
+        
+        <MediaElement Grid.Row="2" x:Name="mediaElement" Visibility="Collapsed" CurrentStateChanged="MediaElement_CurrentStateChanged"  AreTransportControlsEnabled="True"></MediaElement>
+        
     </Grid>
 </Page>
