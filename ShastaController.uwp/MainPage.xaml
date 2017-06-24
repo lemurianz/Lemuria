@@ -533,6 +533,12 @@
                                 <StackPanel Padding="10">
                                     <TextBlock x:Name="TemperatureTextblock" FontSize="8" Text="Temperature" FontFamily="Segoe UI Symbol" ></TextBlock>
                                     <TextBlock x:Name="HumidityTextblock" FontSize="6" Text="Humidity" FontFamily="Segoe UI Symbol" ></TextBlock>
+                                    <Button x:Name="LogOff" Content="" FontSize="10" Margin="0,5"
+                                            FontFamily="Segoe UI Symbol" Foreground="White"
+                                            Style="{StaticResource ButtonStyleRound}" HorizontalAlignment="Center"
+                                            Click="LogOff_Click">
+                                        
+                                    </Button>
                                 </StackPanel>
                             </Viewbox>
                             <!--Temperature/Humidity Sensors End-->

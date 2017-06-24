@@ -181,13 +181,21 @@ namespace ShastaController.uwp
             var ip = "";
             if (IPAddressText.Text == "" || IPAddressText.Text == "default")
                 ip = IPAddress;
+            ConnectStatusText.Text = "Loading...";
             if (await TryConnectToLemuria(ip))
             {
                 SelectPage("main");
                 CoreWindow.GetForCurrentThread().KeyDown += MainPage_KeyDown;
                 CoreWindow.GetForCurrentThread().KeyUp += MainPage_KeyUp;
                 UpdateSettingsPage(await LemurianHub.Invoke<SettingsModels>("GetLemurianSettings", "master"));
+                ConnectStatusText.Text = "Connect to the server";
             }
+            else ConnectStatusText.Text = "Please check the IP Address and try again";
+        }
+
+        private void LogOff_Click(object sender, RoutedEventArgs e)
+        {
+            SelectPage("connect");
         }
         #endregion
 
