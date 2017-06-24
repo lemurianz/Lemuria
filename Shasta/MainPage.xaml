@@ -91,8 +91,8 @@
             </StackPanel>
         </Grid>
 
-        <Image x:Name="ScreenSaver" Grid.Row="1" Visibility="Collapsed" Source="Assets/Brain.jpg"
-               PointerPressed="ScreenSaver_PointerPressed"></Image>
+        <Image x:Name="ScreenSaver" Grid.Row="1" Visibility="Collapsed" Source="Assets/Wide310x150Logo.png"
+               PointerPressed="ScreenSaver_PointerPressed" Stretch="None"></Image>
         
         <Grid x:Name="ContentGrid" Grid.Row="1" Padding="30, 10,30,30"
               Visibility="Visible">
@@ -120,9 +120,15 @@
                             </Grid>
                         </StackPanel>
                         <TextBlock x:Name="SonarLog" HorizontalAlignment="Center" Padding="10" Text="Distance"></TextBlock>
-                        <Button x:Name="ContentToScreenSaver" Click="ContentToScreenSaver_Click"  Style="{StaticResource ButtonStyleRound}" 
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <Button x:Name="ContentToScreenSaver" Click="ContentToScreenSaver_Click"  Style="{StaticResource ButtonStyleRound}" 
                                 Content="" FontSize="32" Padding="15,10" FontFamily="Segoe UI Symbol"
                                 HorizontalAlignment="Center"></Button>
+                            <Button x:Name="ReconnectLemuria" Click="ReconnectLemuria_Click"  Style="{StaticResource ButtonStyleRound}" 
+                                Content="" FontSize="32" Padding="15,10" FontFamily="Segoe UI Symbol"
+                                HorizontalAlignment="Center" Margin="10,0,0,0"
+                                    Visibility="Collapsed"></Button>
+                        </StackPanel>
                     </StackPanel>
                 </PivotItem>
                 <PivotItem Header="Motor">
@@ -153,6 +159,7 @@
                 <PivotItem Header="Sonar">
                     <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                         <ToggleSwitch x:Name="FrontSonar" Header="Enable Sonar Detection" Toggled="FrontSonar_Toggled"></ToggleSwitch>
+                        <TextBlock x:Name="SonarStatusText" FontSize="22" HorizontalAlignment="Center"></TextBlock>
                     </StackPanel>
                 </PivotItem>
                 <PivotItem Header="Detection">
@@ -219,23 +226,26 @@
                     </Pivot>
                 </PivotItem>
                 <PivotItem Header="Infra">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <StackPanel>
-                            <TextBlock Text="1" FontSize="22"></TextBlock>
-                            <TextBlock x:Name="Infra1Detected" Text="No Obstacle"></TextBlock>
-                            <ToggleSwitch x:Name="Infra1Detect" Toggled="Infra1Detect_Toggled"></ToggleSwitch>
-                            <TextBlock Text="2" FontSize="22"></TextBlock>
-                            <TextBlock x:Name="Infra2Detected" Text="No Obstacle"></TextBlock>
-                            <ToggleSwitch x:Name="Infra2Detect" Toggled="Infra2Detect_Toggled"></ToggleSwitch>
+                    <StackPanel VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                            <StackPanel>
+                                <TextBlock Text="1" FontSize="22"></TextBlock>
+                                <TextBlock x:Name="Infra1Detected" Text="No Obstacle"></TextBlock>
+                                <ToggleSwitch x:Name="Infra1Detect" Toggled="Infra1Detect_Toggled"></ToggleSwitch>
+                                <TextBlock Text="2" FontSize="22"></TextBlock>
+                                <TextBlock x:Name="Infra2Detected" Text="No Obstacle"></TextBlock>
+                                <ToggleSwitch x:Name="Infra2Detect" Toggled="Infra2Detect_Toggled"></ToggleSwitch>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="3" FontSize="22"></TextBlock>
+                                <TextBlock x:Name="Infra3Detected" Text="No Obstacle"></TextBlock>
+                                <ToggleSwitch x:Name="Infra3Detect" Toggled="Infra3Detect_Toggled"></ToggleSwitch>
+                                <TextBlock Text="4" FontSize="22"></TextBlock>
+                                <TextBlock x:Name="Infra4Detected" Text="No Obstacle"></TextBlock>
+                                <ToggleSwitch x:Name="Infra4Detect" Toggled="Infra4Detect_Toggled"></ToggleSwitch>
+                            </StackPanel>
                         </StackPanel>
-                        <StackPanel>
-                            <TextBlock Text="3" FontSize="22"></TextBlock>
-                            <TextBlock x:Name="Infra3Detected" Text="No Obstacle"></TextBlock>
-                            <ToggleSwitch x:Name="Infra3Detect" Toggled="Infra3Detect_Toggled"></ToggleSwitch>
-                            <TextBlock Text="4" FontSize="22"></TextBlock>
-                            <TextBlock x:Name="Infra4Detected" Text="No Obstacle"></TextBlock>
-                            <ToggleSwitch x:Name="Infra4Detect" Toggled="Infra4Detect_Toggled"></ToggleSwitch>
-                        </StackPanel>
+                        <TextBlock x:Name="InfraStatusText" FontSize="22" HorizontalAlignment="Center"></TextBlock>
                     </StackPanel>
                 </PivotItem>
                 <PivotItem Header="Temperature">
@@ -243,6 +253,7 @@
                         <ToggleSwitch x:Name="GetTemperatureHumidity" Header="Get Temperature and Humidity" Toggled="GetTemperatureHumidity_Toggled"></ToggleSwitch>
                         <TextBlock x:Name="TemperatureText" Text="Temperature"></TextBlock>
                         <TextBlock x:Name="HumidityText" Text="Humidity"></TextBlock>
+                        <TextBlock x:Name="TempHumStatusText" FontSize="22" HorizontalAlignment="Center"></TextBlock>
                     </StackPanel>
                 </PivotItem>
                 <PivotItem Header="Speakers">
@@ -263,6 +274,10 @@
                             </Button>
                             <Button x:Name="YoutubeReadClick" Click="YoutubeReadClick_Click"  
                                     Style="{StaticResource ButtonStyleRound}" Content="" FontSize="32" 
+                                    Padding="15,10" Margin="10,20" FontFamily="Segoe UI Symbol">
+                            </Button>
+                            <Button x:Name="PlayMusicClick" Click="PlayMusicClick_Click"  
+                                    Style="{StaticResource ButtonStyleRound}" Content="" FontSize="32" 
                                     Padding="15,10" Margin="10,20" FontFamily="Segoe UI Symbol">
                             </Button>
                         </StackPanel>

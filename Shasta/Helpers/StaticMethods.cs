@@ -12,40 +12,55 @@ namespace Shasta.Helpers
         // Move
         public static void enableMotorA(bool forwardA, bool backwardA, bool option)
         {
-            if (forwardA)
+            try
             {
-                if (option)
-                    StaticComponents.directionForwardAPin.Write(GpioPinValue.High);
-                else
-                    StaticComponents.directionForwardAPin.Write(GpioPinValue.Low);
-            }
+                if (forwardA)
+                {
+                    if (option)
+                        StaticComponents.directionForwardAPin.Write(GpioPinValue.High);
+                    else
+                        StaticComponents.directionForwardAPin.Write(GpioPinValue.Low);
+                }
 
-            if (backwardA)
-            {
-                if (option)
-                    StaticComponents.directionBackwardAPin.Write(GpioPinValue.High);
-                else
-                    StaticComponents.directionBackwardAPin.Write(GpioPinValue.Low);
+                if (backwardA)
+                {
+                    if (option)
+                        StaticComponents.directionBackwardAPin.Write(GpioPinValue.High);
+                    else
+                        StaticComponents.directionBackwardAPin.Write(GpioPinValue.Low);
+                }
             }
+            catch (Exception)
+            {
+            }
+            
         }
 
         public static void enableMotorB(bool forwardB, bool backwardB, bool option)
         {
-            if (forwardB)
+            try
             {
-                if (option)
-                    StaticComponents.directionForwardBPin.Write(GpioPinValue.High);
-                else
-                    StaticComponents.directionForwardBPin.Write(GpioPinValue.Low);
-            }
+                if (forwardB)
+                {
+                    if (option)
+                        StaticComponents.directionForwardBPin.Write(GpioPinValue.High);
+                    else
+                        StaticComponents.directionForwardBPin.Write(GpioPinValue.Low);
+                }
 
-            if (backwardB)
-            {
-                if (option)
-                    StaticComponents.directionBackwardBPin.Write(GpioPinValue.High);
-                else
-                    StaticComponents.directionBackwardBPin.Write(GpioPinValue.Low);
+                if (backwardB)
+                {
+                    if (option)
+                        StaticComponents.directionBackwardBPin.Write(GpioPinValue.High);
+                    else
+                        StaticComponents.directionBackwardBPin.Write(GpioPinValue.Low);
+                }
             }
+            catch (Exception)
+            {
+                
+            }
+            
         }
 
         // Sonar

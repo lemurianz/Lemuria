@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using Windows.ApplicationModel;
@@ -36,12 +38,16 @@ namespace ShastaController.uwp
     /// </summary>
     public sealed partial class MainPage : Page
     {
+        #region Global Variables
         private LEDStripLight ledStripLights { get; set; }
         public MainPageNotifiers notifiers { get; set; }
         public IHubProxy LemurianHub { get; set; }
         public MotorSpeedModels speed { get; set; }
         public int PivotSize { get; set; }
+        public string IPAddress = "http://192.168.0.95:52232/";
         int previousKey = -1;
+        #endregion
+
         public MainPage()
         {
             this.InitializeComponent();
@@ -63,66 +69,6 @@ namespace ShastaController.uwp
                 ResetAllSpeedNotifiers("");
         }
 
-        private void MainPage_KeyUp(CoreWindow sender, KeyEventArgs args)
-        {
-            ResetAllSpeedNotifiers("");
-            previousKey = -1;
-        }
-
-        private void MainPage_KeyDown(CoreWindow sender, KeyEventArgs args)
-        {
-            // For some reason holding the keyboard key down triggers this event multiple times
-            if (previousKey != (int)args.VirtualKey)
-            {
-                switch (args.VirtualKey)
-                {
-                    case Windows.System.VirtualKey.Up:
-                    case Windows.System.VirtualKey.W:
-                    case Windows.System.VirtualKey.GamepadDPadUp:
-                    case Windows.System.VirtualKey.GamepadLeftThumbstickUp:
-                        ResetAllSpeedNotifiers("forward");
-                        break;
-
-                    case Windows.System.VirtualKey.Down:
-                    case Windows.System.VirtualKey.S:
-                    case Windows.System.VirtualKey.GamepadDPadDown:
-                    case Windows.System.VirtualKey.GamepadLeftThumbstickDown:
-                        ResetAllSpeedNotifiers("backward");
-                        break;
-
-                    case Windows.System.VirtualKey.Left:
-                    case Windows.System.VirtualKey.A:
-                    case Windows.System.VirtualKey.GamepadDPadLeft:
-                    case Windows.System.VirtualKey.GamepadLeftThumbstickLeft:
-                        ResetAllSpeedNotifiers("left");
-                        break;
-
-                    case Windows.System.VirtualKey.Right:
-                    case Windows.System.VirtualKey.D:
-                    case Windows.System.VirtualKey.GamepadDPadRight:
-                    case Windows.System.VirtualKey.GamepadLeftThumbstickRight:
-                        ResetAllSpeedNotifiers("right");
-                        break;
-
-                    case Windows.System.VirtualKey.GamepadLeftTrigger:
-                        if(LemuriaPivot.SelectedIndex > 0) LemuriaPivot.SelectedIndex -= 1;
-                        break;
-
-                    case Windows.System.VirtualKey.GamepadRightTrigger:
-                        if (LemuriaPivot.SelectedIndex < PivotSize -1) LemuriaPivot.SelectedIndex += 1;
-                        break;
-
-                    case Windows.System.VirtualKey.GamepadY:
-                        if(SpeechButton.IsEnabled & SpeechButton.Visibility == Visibility.Visible) RecordSpeech(true);
-                        break;
-
-                    default:
-                        break;
-                }
-                previousKey = (int)args.VirtualKey;
-            }
-        }
-
         async void TryConnectToLEDStrips()
         {
             IRTopLeftTextblock.Text = "Connecting";
@@ -130,12 +76,13 @@ namespace ShastaController.uwp
             IRTopLeftTextblock.Text = "Connected";
         }
 
-        async Task<bool> TryConnectToLemuria()
+        #region Connect Lemurian Server
+        async Task<bool> TryConnectToLemuria(string ip)
         {
             var hasConnected = false;
             try
             {
-                var hubConnection = new HubConnection("http://localhost:52232/");
+                var hubConnection = new HubConnection(ip);
                 LemurianHub = hubConnection.CreateHubProxy("LemuriaHub");
                 LemurianHub.On<bool>("NotifyTopLeftIR", NotifyTopLeftIRCallback);
                 LemurianHub.On<bool>("NotifyTopRightIR", NotifyTopRightIRCallback);
@@ -229,6 +176,82 @@ namespace ShastaController.uwp
             }).AsTask();
         }
 
+        private async void ConnectButton_Click(object sender, RoutedEventArgs e)
+        {
+            var ip = "";
+            if (IPAddressText.Text == "" || IPAddressText.Text == "default")
+                ip = IPAddress;
+            if (await TryConnectToLemuria(ip))
+            {
+                SelectPage("main");
+                CoreWindow.GetForCurrentThread().KeyDown += MainPage_KeyDown;
+                CoreWindow.GetForCurrentThread().KeyUp += MainPage_KeyUp;
+                UpdateSettingsPage(await LemurianHub.Invoke<SettingsModels>("GetLemurianSettings", "master"));
+            }
+        }
+        #endregion
+
+        #region Initialize
+        private void MainPage_KeyUp(CoreWindow sender, KeyEventArgs args)
+        {
+            ResetAllSpeedNotifiers("");
+            previousKey = -1;
+        }
+
+        private void MainPage_KeyDown(CoreWindow sender, KeyEventArgs args)
+        {
+            // For some reason holding the keyboard key down triggers this event multiple times
+            if (previousKey != (int)args.VirtualKey)
+            {
+                switch (args.VirtualKey)
+                {
+                    case Windows.System.VirtualKey.Up:
+                    case Windows.System.VirtualKey.W:
+                    case Windows.System.VirtualKey.GamepadDPadUp:
+                    case Windows.System.VirtualKey.GamepadLeftThumbstickUp:
+                        ResetAllSpeedNotifiers("forward");
+                        break;
+
+                    case Windows.System.VirtualKey.Down:
+                    case Windows.System.VirtualKey.S:
+                    case Windows.System.VirtualKey.GamepadDPadDown:
+                    case Windows.System.VirtualKey.GamepadLeftThumbstickDown:
+                        ResetAllSpeedNotifiers("backward");
+                        break;
+
+                    case Windows.System.VirtualKey.Left:
+                    case Windows.System.VirtualKey.A:
+                    case Windows.System.VirtualKey.GamepadDPadLeft:
+                    case Windows.System.VirtualKey.GamepadLeftThumbstickLeft:
+                        ResetAllSpeedNotifiers("left");
+                        break;
+
+                    case Windows.System.VirtualKey.Right:
+                    case Windows.System.VirtualKey.D:
+                    case Windows.System.VirtualKey.GamepadDPadRight:
+                    case Windows.System.VirtualKey.GamepadLeftThumbstickRight:
+                        ResetAllSpeedNotifiers("right");
+                        break;
+
+                    case Windows.System.VirtualKey.GamepadLeftTrigger:
+                        if (LemuriaPivot.SelectedIndex > 0) LemuriaPivot.SelectedIndex -= 1;
+                        break;
+
+                    case Windows.System.VirtualKey.GamepadRightTrigger:
+                        if (LemuriaPivot.SelectedIndex < PivotSize - 1) LemuriaPivot.SelectedIndex += 1;
+                        break;
+
+                    case Windows.System.VirtualKey.GamepadY:
+                        if (SpeechButton.IsEnabled & SpeechButton.Visibility == Visibility.Visible) RecordSpeech(true);
+                        break;
+
+                    default:
+                        break;
+                }
+                previousKey = (int)args.VirtualKey;
+            }
+        }
+
         void SelectPage(string page)
         {
             if (page == "main")
@@ -295,7 +318,9 @@ namespace ShastaController.uwp
         {
             await Initialize();
         }
+        #endregion
 
+        #region Movement Logic
         private void ResetAllSpeeds()
         {
             if (!notifiers.IsLeftPressed)
@@ -355,7 +380,7 @@ namespace ShastaController.uwp
                 {
                     if (speed.ForwardSpeed > MaxMotorASpeed.Value) MotorATextblock.Text = "◈";
                     if (speed.ForwardSpeed > MaxMotorBSpeed.Value) MotorBTextblock.Text = "◈";
-                    if (speed.ForwardSpeed < 99)
+                    if (speed.ForwardSpeed < 100)
                     {
                         DirectionTextblock.Text = "⮝";
                         SpeedTextblock.Text = speed.ForwardSpeed.ToString();
@@ -386,7 +411,7 @@ namespace ShastaController.uwp
                 {
                     if (speed.BackwardSpeed > MaxMotorASpeed.Value) MotorATextblock.Text = "◈";
                     if (speed.BackwardSpeed > MaxMotorBSpeed.Value) MotorBTextblock.Text = "◈";
-                    if (speed.BackwardSpeed < 99)
+                    if (speed.BackwardSpeed < 100)
                     {
                         SpeedTextblock.Text = speed.BackwardSpeed.ToString();
                         DirectionTextblock.Text = "⮟";
@@ -452,6 +477,7 @@ namespace ShastaController.uwp
             }
             else speed.RightSpeed = MovementStopped();
         }
+        #endregion
 
         private void MoveForward_PointerPressed(object sender, PointerRoutedEventArgs e)
         {
@@ -493,6 +519,7 @@ namespace ShastaController.uwp
             ResetAllSpeedNotifiers("");
         }
 
+        #region Speech
         async Task<string> RecordSpeechFromMicrophoneAsync(bool isGamepad)
         {
             string recognizedText = string.Empty;
@@ -554,9 +581,19 @@ namespace ShastaController.uwp
             });
         }
 
-        private void SpeechCorrectButton_Click(object sender, RoutedEventArgs e)
+        private async void SpeechCorrectButton_Click(object sender, RoutedEventArgs e)
         {
-
+            using (var httpClient = new HttpClient())
+            {
+                if (SpeechPreviewText.Text.Contains("play"))
+                {
+                    string music = SpeechPreviewText.Text.Replace("play", "");
+                    if(music != "top trending music")
+                        SpeechPreviewText.Text = "play \"" + SpeechPreviewText.Text.Trim() + "\"";
+                }
+                string url = IPAddress + "api/lemuria?connect=" + WebUtility.UrlEncode(SpeechPreviewText.Text);
+                SpeechPreviewText.Text = await httpClient.GetStringAsync(url);
+            }
         }
 
         private void SpeechWrongButton_Click(object sender, RoutedEventArgs e)
@@ -570,17 +607,7 @@ namespace ShastaController.uwp
         {
             RecordSpeech(false);
         }
-
-        private async void ConnectButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (await TryConnectToLemuria())
-            {
-                SelectPage("main");
-                CoreWindow.GetForCurrentThread().KeyDown += MainPage_KeyDown;
-                CoreWindow.GetForCurrentThread().KeyUp += MainPage_KeyUp;
-                UpdateSettingsPage(await LemurianHub.Invoke<SettingsModels>("GetLemurianSettings", "master"));
-            }
-        }
+        #endregion
 
         #region Settings
         private void UpdateIRStatus()
@@ -672,16 +699,19 @@ namespace ShastaController.uwp
             UpdateIRStatus();
         }
 
+        // Face detection
         private async void FaceDetectionCamera_Toggled(object sender, RoutedEventArgs e)
         {
             await LemurianHub.Invoke<bool>("SetFaceDetectionCamera", ((ToggleSwitch)sender).IsOn);
         }
 
+        // Temperature
         private async void TemperatureHumiditySensor_Toggled(object sender, RoutedEventArgs e)
         {
             await LemurianHub.Invoke<bool>("SetTemperatureHumiditySensor", ((ToggleSwitch)sender).IsOn);
         }
 
+        // Sonar
         private async void BackSonarSensor_Toggled(object sender, RoutedEventArgs e)
         {
             await LemurianHub.Invoke<bool>("SetBackSonarSensor", ((ToggleSwitch)sender).IsOn);
@@ -692,6 +722,7 @@ namespace ShastaController.uwp
             await LemurianHub.Invoke<bool>("SetFrontSonarSensor", ((ToggleSwitch)sender).IsOn);
         }
 
+        // Infra
         private async void BottomRightIRSensor_Toggled(object sender, RoutedEventArgs e)
         {
             UpdateIRStatus();
@@ -716,6 +747,7 @@ namespace ShastaController.uwp
             await LemurianHub.Invoke<bool>("SetTopLeftIRSensor", ((ToggleSwitch)sender).IsOn);
         }
 
+        // Motor
         private async void StartMotorBSpeed_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
             await LemurianHub.Invoke<bool>("SetStartMotorBSpeed", (int)e.NewValue);

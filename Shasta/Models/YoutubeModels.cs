@@ -78,7 +78,13 @@ namespace Shasta.Models
         public string defaultLanguage { get; set; }
     }
 
-    public class Item
+    public class Id
+    {
+        public string kind { get; set; }
+        public string videoId { get; set; }
+    }
+
+    public class ItemA
     {
         public string kind { get; set; }
         public string etag { get; set; }
@@ -86,12 +92,29 @@ namespace Shasta.Models
         public Snippet snippet { get; set; }
     }
 
-    public class YoutubeModels
+    public class ItemB
+    {
+        public string kind { get; set; }
+        public string etag { get; set; }
+        public Id id { get; set; }
+        public Snippet snippet { get; set; }
+    }
+
+    public class YoutubeMostPopularModels
     {
         public string kind { get; set; }
         public string etag { get; set; }
         public string nextPageToken { get; set; }
         public PageInfo pageInfo { get; set; }
-        public List<Item> items { get; set; }
+        public List<ItemA> items { get; set; }
+    }
+
+    public class YoutubeSearchModels
+    {
+        public string kind { get; set; }
+        public string etag { get; set; }
+        public string nextPageToken { get; set; }
+        public PageInfo pageInfo { get; set; }
+        public List<ItemB> items { get; set; }
     }
 }

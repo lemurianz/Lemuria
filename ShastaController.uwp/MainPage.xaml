@@ -725,7 +725,7 @@
                     <ColumnDefinition Width="5*"></ColumnDefinition>
                     <ColumnDefinition Width="*"></ColumnDefinition>
                 </Grid.ColumnDefinitions>
-                <TextBox PlaceholderText="IP Address" BorderThickness="0,0,0,1" Background="Transparent" 
+                <TextBox x:Name="IPAddressText" PlaceholderText="IP Address" BorderThickness="0,0,0,1" Background="Transparent" 
                      Foreground="White" Style="{StaticResource TextBoxStyle}" Margin="0,10">
                 </TextBox>
                 <Button Margin="10" Grid.Column="1" x:Name="ConnectButton"

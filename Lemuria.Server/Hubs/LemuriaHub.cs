@@ -12,7 +12,7 @@ namespace Lemuria.Server.Hubs
         public static bool SetConnected { get; set; }
         public static Dictionary<string, string> SignalRClients { get; set; }
         public static SettingsModels Settings { get; set; }
-
+        public IHubContext LemurianHubContext { get; set; }
 
         public LemuriaHub()
         {
@@ -22,6 +22,7 @@ namespace Lemuria.Server.Hubs
                 SignalRClients.Add("master", "");
             }
             if (Settings == null) Settings = new SettingsModels();
+            LemurianHubContext = GlobalHost.ConnectionManager.GetHubContext<LemuriaHub>();
         }
 
         public bool LemurianSignal(string type)
@@ -35,6 +36,12 @@ namespace Lemuria.Server.Hubs
                 SignalRClients["motor"] = this.Context.ConnectionId;
                 SetConnected = true;
             }
+            // Facebook messenger as controller
+            else if (type == "messenger")
+            {
+                if (string.IsNullOrEmpty(SignalRClients["master"]))
+                    SignalRClients["master"] = "messenger";
+            }
             // Deal with others
             else SignalRClients.Add(this.Context.ConnectionId, type);
             return true;
@@ -46,8 +53,38 @@ namespace Lemuria.Server.Hubs
             // send the navigation info only to the motor
             var masterId = SignalRClients["master"];
             var motorId = SignalRClients["motor"];
-            if (masterId == this.Context.ConnectionId & !string.IsNullOrEmpty(motorId))
-                this.Clients.Client(motorId).MoveRobot(direction, speed.ForwardSpeed, speed.BackwardSpeed, speed.LeftSpeed, speed.RightSpeed);
+            if (ControllerMotorPass())
+                LemurianHubContext.Clients.Client(motorId).MoveRobot(direction, speed.ForwardSpeed, speed.BackwardSpeed, speed.LeftSpeed, speed.RightSpeed);
+        }
+
+        public void LemurianMusic(bool play, string youtubeId, bool isSearch)
+        {
+            // only get movement controls from the master controller and 
+            // send the navigation info only to the motor
+            var masterId = SignalRClients["master"];
+            var motorId = SignalRClients["motor"];
+            if (ControllerMotorPass())
+                LemurianHubContext.Clients.Client(motorId).YoutubeMusic(play, youtubeId, isSearch);
+        }
+
+        public void LemurianVolume(int volume)
+        {
+            // only get movement controls from the master controller and 
+            // send the navigation info only to the motor
+            var masterId = SignalRClients["master"];
+            var motorId = SignalRClients["motor"];
+            if (ControllerMotorPass())
+                LemurianHubContext.Clients.Client(motorId).SetVolume(volume);
+        }
+
+        public void LemurianGreeting(string greeting)
+        {
+            // only get movement controls from the master controller and 
+            // send the navigation info only to the motor
+            var masterId = SignalRClients["master"];
+            var motorId = SignalRClients["motor"];
+            if (ControllerMotorPass())
+                LemurianHubContext.Clients.Client(motorId).SetGreeting(greeting);
         }
 
         public SettingsModels GetLemurianSettings(string type)
@@ -71,8 +108,10 @@ namespace Lemuria.Server.Hubs
         {
             var masterId = SignalRClients["master"];
             var motorId = SignalRClients["motor"];
-            if (masterId == this.Context.ConnectionId & !string.IsNullOrEmpty(motorId))
+            if (!string.IsNullOrEmpty(masterId) & !string.IsNullOrEmpty(motorId))
+            {
                 return true;
+            }
             else return false;
         }
 
@@ -86,11 +125,12 @@ namespace Lemuria.Server.Hubs
         }
 
         // Set the settings
+        //Motor
         public bool SetMaxMotorASpeed(int value)
         {
             if (ControllerMotorPass()) { 
                 Settings.MaxMotorSpeedA = value;
-                this.Clients.Client(SignalRClients["motor"]).SetMotorAMaxSpeed(Settings.MaxMotorSpeedA);
+                LemurianHubContext.Clients.Client(SignalRClients["motor"]).SetMotorAMaxSpeed(Settings.MaxMotorSpeedA);
             }
             return true;
         }
@@ -100,7 +140,7 @@ namespace Lemuria.Server.Hubs
             if (ControllerMotorPass())
             {
                 Settings.MaxMotorSpeedB = value;
-                this.Clients.Client(SignalRClients["motor"]).SetMotorBMaxSpeed(Settings.MaxMotorSpeedB);
+                LemurianHubContext.Clients.Client(SignalRClients["motor"]).SetMotorBMaxSpeed(Settings.MaxMotorSpeedB);
             }
             return true;
         }
@@ -110,7 +150,7 @@ namespace Lemuria.Server.Hubs
             if (ControllerMotorPass())
             {
                 Settings.StartMotorSpeedA = value;
-                this.Clients.Client(SignalRClients["motor"]).SetStartMotorASpeed(Settings.StartMotorSpeedA);
+                LemurianHubContext.Clients.Client(SignalRClients["motor"]).SetStartMotorASpeed(Settings.StartMotorSpeedA);
             }
             return true;
         }
@@ -120,17 +160,18 @@ namespace Lemuria.Server.Hubs
             if (ControllerMotorPass())
             {
                 Settings.StartMotorSpeedB = value;
-                this.Clients.Client(SignalRClients["motor"]).SetStartMotorBSpeed(Settings.StartMotorSpeedB);
+                LemurianHubContext.Clients.Client(SignalRClients["motor"]).SetStartMotorBSpeed(Settings.StartMotorSpeedB);
             }
             return true;
         }
 
+        // IR
         public bool SetTopLeftIRSensor(bool value)
         {
             if (ControllerMotorPass())
             {
                 Settings.TopLeftIR = value;
-                this.Clients.Client(SignalRClients["motor"]).SetTopLeftIRSensor(Settings.TopLeftIR);
+                LemurianHubContext.Clients.Client(SignalRClients["motor"]).SetTopLeftIRSensor(Settings.TopLeftIR);
             }
             return true;
         }
@@ -140,7 +181,7 @@ namespace Lemuria.Server.Hubs
             if (ControllerMotorPass())
             {
                 Settings.TopRightIR = value;
-                this.Clients.Client(SignalRClients["motor"]).SetTopRightIRSensor(Settings.TopRightIR);
+                LemurianHubContext.Clients.Client(SignalRClients["motor"]).SetTopRightIRSensor(Settings.TopRightIR);
             }
             return true;
         }
@@ -150,7 +191,7 @@ namespace Lemuria.Server.Hubs
             if (ControllerMotorPass())
             {
                 Settings.BottomLeftIR = value;
-                this.Clients.Client(SignalRClients["motor"]).SetBottomLeftIRSensor(Settings.BottomLeftIR);
+                LemurianHubContext.Clients.Client(SignalRClients["motor"]).SetBottomLeftIRSensor(Settings.BottomLeftIR);
             }
             return true;
         }
@@ -160,32 +201,51 @@ namespace Lemuria.Server.Hubs
             if (ControllerMotorPass())
             {
                 Settings.BottomRightIR = value;
-                this.Clients.Client(SignalRClients["motor"]).SetBottomRightIRSensor(Settings.BottomRightIR);
+                LemurianHubContext.Clients.Client(SignalRClients["motor"]).SetBottomRightIRSensor(Settings.BottomRightIR);
             }
             return true;
         }
 
+        // Sonar
         public bool SetFrontSonarSensor(bool value)
         {
-            Settings.FrontSonar = value;
+            if (ControllerMotorPass())
+            {
+                Settings.FrontSonar = value;
+                LemurianHubContext.Clients.Client(SignalRClients["motor"]).SetFrontSonarSensor(Settings.FrontSonar);
+            }
             return true;
         }
 
         public bool SetBackSonarSensor(bool value)
         {
-            Settings.BackSonar = value;
+            if (ControllerMotorPass())
+            {
+                Settings.BackSonar = value;
+                LemurianHubContext.Clients.Client(SignalRClients["motor"]).SetBackSonarSensor(Settings.BackSonar);
+            }
             return true;
         }
 
+        // Temperature
         public bool SetTemperatureHumiditySensor(bool value)
         {
-            Settings.InternalTempAndHum = value;
+            if (ControllerMotorPass())
+            {
+                Settings.InternalTempAndHum = value;
+                LemurianHubContext.Clients.Client(SignalRClients["motor"]).SetTemperatureHumiditySensor(Settings.InternalTempAndHum);
+            }
             return true;
         }
 
+        // Face detection
         public bool SetFaceDetectionCamera(bool value)
         {
-            Settings.FaceDetect = value;
+            if (ControllerMotorPass())
+            {
+                Settings.FaceDetect = value;
+                LemurianHubContext.Clients.Client(SignalRClients["motor"]).SetFaceDetectionCamera(Settings.FaceDetect);
+            }
             return true;
         }
 
@@ -193,37 +253,37 @@ namespace Lemuria.Server.Hubs
         public void NotifyTopLeftIR(bool value)
         {
             if (MotorControllerPass())
-                this.Clients.Client(SignalRClients["master"]).NotifyTopLeftIR(value);
+                LemurianHubContext.Clients.Client(SignalRClients["master"]).NotifyTopLeftIR(value);
         }
 
         public void NotifyTopRightIR(bool value)
         {
             if (MotorControllerPass())
-                this.Clients.Client(SignalRClients["master"]).NotifyTopRightIR(value);
+                LemurianHubContext.Clients.Client(SignalRClients["master"]).NotifyTopRightIR(value);
         }
 
         public void NotifyBottomLeftIR(bool value)
         {
             if (MotorControllerPass())
-                this.Clients.Client(SignalRClients["master"]).NotifyBottomLeftIR(value);
+                LemurianHubContext.Clients.Client(SignalRClients["master"]).NotifyBottomLeftIR(value);
         }
 
         public void NotifyBottomRightIR(bool value)
         {
             if (MotorControllerPass())
-                this.Clients.Client(SignalRClients["master"]).NotifyBottomRightIR(value);
+                LemurianHubContext.Clients.Client(SignalRClients["master"]).NotifyBottomRightIR(value);
         }
 
         public void NotifySonarDistance(double distance)
         {
             if (MotorControllerPass())
-                this.Clients.Client(SignalRClients["master"]).NotifySonarDistance(distance);
+                LemurianHubContext.Clients.Client(SignalRClients["master"]).NotifySonarDistance(distance);
         }
 
         public void NotifyTemperatureHumidity(double temperature, double humidity)
         {
             if (MotorControllerPass())
-                this.Clients.Client(SignalRClients["master"]).NotifyTemperatureHumidity(temperature, humidity);
+                LemurianHubContext.Clients.Client(SignalRClients["master"]).NotifyTemperatureHumidity(temperature, humidity);
         }
 
     }

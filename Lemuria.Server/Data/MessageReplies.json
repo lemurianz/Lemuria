@@ -1,0 +1,186 @@
+﻿[
+  {
+    "ReceivedMessage": "hello",
+    "ReplyMessage": "Hi",
+    "Methods": {
+      "Greetings": [
+        "Weather"
+      ]
+    }
+  },
+  {
+    "ReceivedMessage": "(move forward).*?(\\d+) (sec)",
+    "ReplyMessage": "I will be moving forward for {int} seconds",
+    "Methods": {
+      "Move": [
+        "Forward",
+        "50",
+        "0",
+        "0",
+        "0",
+        "{int}"
+      ]
+    }
+  },
+  {
+    "ReceivedMessage": "(move backward).*?(\\d+) (sec)",
+    "ReplyMessage": "I will be moving backward for {int} seconds",
+    "Methods": {
+      "Move": [
+        "Backward",
+        "0",
+        "50",
+        "0",
+        "0",
+        "{int}"
+      ]
+    }
+  },
+  {
+    "ReceivedMessage": "(move left).*?(\\d+) (sec)",
+    "ReplyMessage": "I will be moving left for {int} seconds",
+    "Methods": {
+      "Move": [
+        "Left",
+        "0",
+        "0",
+        "50",
+        "0",
+        "{int}"
+      ]
+    }
+  },
+  {
+    "ReceivedMessage": "(move right).*?(\\d+) (sec)",
+    "ReplyMessage": "I will be moving right for {int} seconds",
+    "Methods": {
+      "Move": [
+        "Right",
+        "0",
+        "0",
+        "0",
+        "50",
+        "{int}"
+      ]
+    }
+  },
+  {
+    "ReceivedMessage": "(move forward)",
+    "ReplyMessage": "I will be moving forward for eternity (or until I run out of battery) so please 'Stop' me",
+    "Methods": {
+      "Move": [
+        "Forward",
+        "50",
+        "0",
+        "0",
+        "0",
+        "50000"
+      ]
+    }
+  },
+  {
+    "ReceivedMessage": "(move backward)",
+    "ReplyMessage": "I will be moving backward for eternity (or until I run out of battery) so please 'Stop' me",
+    "Methods": {
+      "Move": [
+        "Backward",
+        "0",
+        "50",
+        "0",
+        "0",
+        "50000"
+      ]
+    }
+  },
+  {
+    "ReceivedMessage": "(move left)",
+    "ReplyMessage": "I will be moving left for eternity (or until I run out of battery) so please 'Stop' me",
+    "Methods": {
+      "Move": [
+        "Left",
+        "0",
+        "0",
+        "50",
+        "0",
+        "50000"
+      ]
+    }
+  },
+  {
+    "ReceivedMessage": "(move right)",
+    "ReplyMessage": "I will be moving right for eternity (or until I run out of battery) so please 'Stop' me",
+    "Methods": {
+      "Move": [
+        "Right",
+        "0",
+        "0",
+        "0",
+        "50",
+        "50000"
+      ]
+    }
+  },
+  {
+    "ReceivedMessage": "(stop moving)",
+    "ReplyMessage": "As you say master",
+    "Methods": {
+      "Move": [
+        "Stop",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0"
+      ]
+    }
+  },
+  {
+    "ReceivedMessage": "(play) (top trending music)(?:.*?dance)?",
+    "ReplyMessage": "Here I go {str}",
+    "Methods": {
+      "Music": [
+        "Top Trending Music",
+        "{str}"
+      ]
+    }
+  },
+  {
+    "ReceivedMessage": "(play) http(?:s?):\\/\\/(?:www\\.)?youtu(?:be\\.com\\/watch\\?v=|\\.be\\/)([\\w\\-\\\\_]*)(&(amp;)?‌​[\\w\\?‌​=]*)?(?:.*?dance)?",
+    "ReplyMessage": "Here I go {str}",
+    "Methods": {
+      "Music": [
+        "{str}",
+        "{str}"
+      ]
+    }
+  },
+  {
+    "ReceivedMessage": "(play) \"(.*?)\"(?:.*?dance)?",
+    "ReplyMessage": "Here I go {str}",
+    "Methods": {
+      "Music": [
+        "{str}",
+        "{str}"
+      ]
+    }
+  },
+  {
+    "ReceivedMessage": "(stop music)",
+    "ReplyMessage": "Alright I will stop the music",
+    "Methods": {
+      "Music": [
+        "Stop",
+        "Stop"
+      ]
+    }
+  },
+  {
+    "ReceivedMessage": "(volume to) (\\d+)",
+    "ReplyMessage": "I changed the volume to {int}",
+    "Methods": {
+      "Volume": [
+        "{int}"
+      ]
+    }
+  }
+]

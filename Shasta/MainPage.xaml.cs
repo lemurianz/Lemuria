@@ -18,6 +18,7 @@ using System.Net;
 using System.Net.Http;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
+using VideoLibrary;
 using Windows.ApplicationModel.Core;
 using Windows.Devices;
 using Windows.Devices.Enumeration;
@@ -79,7 +80,7 @@ namespace Shasta
         {
             this.InitializeComponent();
             ApplicationView.PreferredLaunchViewSize = new Size(800, 480);
-            ApplicationView.PreferredLaunchWindowingMode = ApplicationViewWindowingMode.PreferredLaunchViewSize; 
+            ApplicationView.PreferredLaunchWindowingMode = ApplicationViewWindowingMode.PreferredLaunchViewSize;
             speechSynthesizer = new SpeechSynthesizer();
             MediaDevice.DefaultAudioRenderDeviceChanged += MediaDevice_DefaultAudioRenderDeviceChanged;
             //ReadText("Hi, I am " + speechSynthesizer.Voice.DisplayName);
@@ -94,6 +95,9 @@ namespace Shasta
             InitHelpers();
             InitOxford();
             UpdateSpeakerStatus();
+            // Uncomment this if you are testing the app as x86
+            // LemuriaHubStat.Text = "Loading";
+            // InitHub();
         }
 
         #region Initialize
@@ -222,6 +226,13 @@ namespace Shasta
                 LemurianHub.On<bool>("SetTopRightIRSensor", SetTopRightIRSensorCallback);
                 LemurianHub.On<bool>("SetBottomLeftIRSensor", SetBottomLeftIRSensorCallback);
                 LemurianHub.On<bool>("SetBottomRightIRSensor", SetBottomRightIRSensorCallback);
+                LemurianHub.On<bool>("SetFrontSonarSensor", SetFrontSonarSensorCallback);
+                LemurianHub.On<bool>("SetBackSonarSensor", SetBackSonarSensorCallback);
+                LemurianHub.On<bool>("SetTemperatureHumiditySensor", SetTemperatureHumiditySensorCallback);
+                LemurianHub.On<bool>("SetFaceDetectionCamera", SetFaceDetectionCameraCallback);
+                LemurianHub.On<bool, string, bool>("YoutubeMusic", YoutubeMusicCallback);
+                LemurianHub.On<int>("SetVolume", SetVolumeCallback);
+                LemurianHub.On<string>("SetGreeting", SetGreetingCallback);
                 await hubConnection.Start(new LongPollingTransport());
 
                 // Start the Lemuria
@@ -230,11 +241,13 @@ namespace Shasta
                 InitSettingsAndEvents();
                 LemuriaHubStat.Text = "Connected";
                 LemuriaConnect();
+                ReconnectLemuria.Visibility = Visibility.Collapsed;
             }
             catch (Exception)
             {
                 StaticComponents.IsLemuriaHubConnected = false;
                 LemuriaHubStat.Text = "Not Connected";
+                ReconnectLemuria.Visibility = Visibility.Visible;
             }
         }
 
@@ -284,6 +297,49 @@ namespace Shasta
 
         // Call Backs from SignalR
 
+        // Face detection
+        private void SetFaceDetectionCameraCallback(bool value)
+        {
+            CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+            () =>
+            {
+                StaticComponents.LemuriaSettings.FaceDetect = value;
+                // Future feature
+            }).AsTask();
+        }
+
+        // Temperature and humidity
+        private void SetTemperatureHumiditySensorCallback(bool value)
+        {
+            CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+            () =>
+            {
+                StaticComponents.LemuriaSettings.InternalTempAndHum = value;
+                GetTemperatureHumidity.IsOn = value;
+            }).AsTask();
+        }
+
+        // Sonar
+        private void SetFrontSonarSensorCallback(bool value)
+        {
+            CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+            () =>
+            {
+                StaticComponents.LemuriaSettings.FrontSonar = value;
+                FrontSonar.IsOn = value;
+            }).AsTask();
+        }
+
+        private void SetBackSonarSensorCallback(bool value)
+        {
+            CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+            () =>
+            {
+                StaticComponents.LemuriaSettings.BackSonar = value;
+                // Future feature
+            }).AsTask();
+        }
+
         // Infra
         private void SetTopLeftIRSensorCallback(bool value)
         {
@@ -327,34 +383,65 @@ namespace Shasta
         {
             StaticComponents.LemuriaSettings.StartMotorSpeedB = value;
         }
-
         private void SetStartMotorASpeedCallback(int value)
         {
             StaticComponents.LemuriaSettings.StartMotorSpeedA = value;
         }
-
         private void SetMotorBMaxSpeedCallback(int value)
         {
             StaticComponents.LemuriaSettings.MaxMotorSpeedB = value;
         }
-
         private void SetMotorAMaxSpeedCallback(int value)
         {
             StaticComponents.LemuriaSettings.MaxMotorSpeedA = value;
         }
 
+        // Youtube
+        private void YoutubeMusicCallback(bool play, string id, bool isSearch)
+        {
+            if (play)
+                PlayYoutubeMusic(id, isSearch);
+            else StopMusic();
+        }
+
+        // Volume
+        private async void SetVolumeCallback(int volume)
+        {
+            await CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+            () =>
+            {
+                SpeakVolume.Value = volume;
+            });
+        }
+
+        // Greeting 
+        private async void SetGreetingCallback(string greeting)
+        {
+            await CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+            async () =>
+            {
+                var weather = await GetWeather("Reading", "UK");
+                if (weather != null)
+                    TextToRead.Text = "The weather is currently " + weather.main.temp + " degrees and has " + weather.weather.First().description;
+                ReadText(TextToRead.Text, false);
+            });             
+        }
+
+        // Move
+        #region Movement Logic
         private void ResetDirection(string direction, bool insist)
         {
             if(insist)
                 ReadText("I cant move any further in " + direction + " direction", false);
 
-            if (direction == "forward")
+            if (direction == "forward" || direction == "stop")
                 ForwardIndicator.Foreground = StaticComponents.inactiveBrush;
-            else if (direction == "backward")
-                ForwardIndicator.Foreground = StaticComponents.inactiveBrush;
-            else if (direction == "left")
+            if (direction == "backward" || direction == "stop")
+                BackwardIndicator.Foreground = StaticComponents.inactiveBrush;
+            if (direction == "left" || direction == "stop")
                 LeftIndicator.Foreground = StaticComponents.inactiveBrush;
-            else RightIndicator.Foreground = StaticComponents.inactiveBrush;
+            if (direction == "right" || direction == "stop")
+                RightIndicator.Foreground = StaticComponents.inactiveBrush;
 
             motorASpeed.Value = 0;
             motorBSpeed.Value = 0;
@@ -477,7 +564,7 @@ namespace Shasta
 
             return value;
         }
-
+        #endregion
         private void MoveRobotCallback(string direction, int forward, int backward, int left, int right)
         {
             CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
@@ -502,6 +589,9 @@ namespace Shasta
                         if (infraUpdate.FrontSonarDistance > 50)
                             TurnRight(await SensorPass(right, "right"));
                         else ResetDirection("right", true);
+                        break;
+                    case "stop":
+                        ResetDirection(direction, false);
                         break;
                     default:
                         break;
@@ -536,12 +626,26 @@ namespace Shasta
 
         private void motorASpeed_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
-            StaticComponents.speedAPin.SetActiveDutyCyclePercentage(e.NewValue * .01);
+            try
+            {
+                StaticComponents.speedAPin.SetActiveDutyCyclePercentage(e.NewValue * .01);
+            }
+            catch (Exception)
+            {
+               
+            }
         }
 
         private void motorBSpeed_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
-            StaticComponents.speedBPin.SetActiveDutyCyclePercentage(e.NewValue * .01);
+            try
+            {
+                StaticComponents.speedBPin.SetActiveDutyCyclePercentage(e.NewValue * .01);
+            }
+            catch (Exception)
+            {
+
+            }
         }
 
         private void enableInputForwardA_Toggled(object sender, RoutedEventArgs e)
@@ -588,12 +692,12 @@ namespace Shasta
 
         #region Object Avoidance
 
-        private void FrontSonar_Toggled(object sender, RoutedEventArgs e)
+        private async void FrontSonar_Toggled(object sender, RoutedEventArgs e)
         {
-            CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
-            async () =>
+            while (FrontSonar.IsOn)
             {
-                while (FrontSonar.IsOn)
+                SonarStatusText.Text = "";
+                try
                 {
                     // Your UI update code goes here!
                     await StaticMethods.SendPulse();
@@ -607,15 +711,20 @@ namespace Shasta
                         SonarLog.Text = "Out Of Range";        //display out of range
 
                     await LemurianHub.Invoke("NotifySonarDistance", distance);
-                    await Task.Delay(StaticComponents.ObjectAvoidanceSensorDelay);
                 }
-
-                if (!FrontSonar.IsOn)
+                catch (Exception)
                 {
-                    infraUpdate.FrontSonarDistance = 500;
-                    SonarLog.Text = "Distance";
+                    SonarStatusText.Text = "Sonar has error";
                 }
-            }).AsTask();
+                await Task.Delay(StaticComponents.ObjectAvoidanceSensorDelay);
+            }
+
+            if (!FrontSonar.IsOn)
+            {
+                infraUpdate.FrontSonarDistance = 500;
+                SonarLog.Text = "Distance";
+            }
+            SonarStatusText.Text = "";
         }
 
         #endregion
@@ -889,8 +998,15 @@ namespace Shasta
         {
             bool hasObject = false;
 
-            if (StaticComponents.infra1Pin.Read() == GpioPinValue.High)
-                hasObject = true;
+            try
+            {
+                if (StaticComponents.infra1Pin.Read() == GpioPinValue.High)
+                    hasObject = true;
+            }
+            catch (Exception)
+            {
+                InfraStatusText.Text = "Infra 1 has error";
+            }
 
             return hasObject;
         }
@@ -899,8 +1015,15 @@ namespace Shasta
         {
             bool hasObject = false;
 
-            if (StaticComponents.infra2Pin.Read() == GpioPinValue.High)
-                hasObject = true;
+            try
+            {
+                if (StaticComponents.infra2Pin.Read() == GpioPinValue.High)
+                    hasObject = true;
+            }
+            catch (Exception)
+            {
+                InfraStatusText.Text = "Infra 2 has error";
+            }
 
             return hasObject;
         }
@@ -909,8 +1032,15 @@ namespace Shasta
         {
             bool hasObject = false;
 
-            if (StaticComponents.infra3Pin.Read() == GpioPinValue.High)
-                hasObject = true;
+            try
+            {
+                if (StaticComponents.infra3Pin.Read() == GpioPinValue.High)
+                    hasObject = true;
+            }
+            catch (Exception)
+            {
+                InfraStatusText.Text = "Infra 3 has error";
+            }
 
             return hasObject;
         }
@@ -919,8 +1049,16 @@ namespace Shasta
         {
             bool hasObject = false;
 
-            if (StaticComponents.infra4Pin.Read() == GpioPinValue.High)
-                hasObject = true;
+            try
+            {
+                if (StaticComponents.infra4Pin.Read() == GpioPinValue.High)
+                    hasObject = true;
+            }
+            catch (Exception)
+            {
+                InfraStatusText.Text = "Infra 4 has error";
+            }
+
 
             return hasObject;
         }
@@ -929,6 +1067,7 @@ namespace Shasta
         {
             while (Infra1Detect.IsOn)
             {
+                InfraStatusText.Text = "";
                 if (!HasInfra1Obstacle())
                 {
                     Infra1Detected.Text = "Obstacle Detected";
@@ -942,12 +1081,14 @@ namespace Shasta
 
                 await Task.Delay(StaticComponents.FloorDetectionSensorDelay);
             }
+            InfraStatusText.Text = "";
         }
 
         private async void Infra2Detect_Toggled(object sender, RoutedEventArgs e)
         {
             while (Infra2Detect.IsOn)
             {
+                InfraStatusText.Text = "";
                 if (!HasInfra2Obstacle())
                 {
                     Infra2Detected.Text = "Obstacle Detected";
@@ -961,12 +1102,14 @@ namespace Shasta
 
                 await Task.Delay(StaticComponents.FloorDetectionSensorDelay);
             }
+            InfraStatusText.Text = "";
         }
 
         private async void Infra3Detect_Toggled(object sender, RoutedEventArgs e)
         {
             while (Infra3Detect.IsOn)
             {
+                InfraStatusText.Text = "";
                 if (!HasInfra3Obstacle())
                 {
                     Infra3Detected.Text = "Obstacle Detected";
@@ -980,12 +1123,14 @@ namespace Shasta
 
                 await Task.Delay(StaticComponents.FloorDetectionSensorDelay);
             }
+            InfraStatusText.Text = "";
         }
 
         private async void Infra4Detect_Toggled(object sender, RoutedEventArgs e)
         {
             while (Infra4Detect.IsOn)
             {
+                InfraStatusText.Text = "";
                 if (!HasInfra4Obstacle())
                 {
                     Infra4Detected.Text = "Obstacle Detected";
@@ -999,6 +1144,7 @@ namespace Shasta
 
                 await Task.Delay(StaticComponents.FloorDetectionSensorDelay);
             }
+            InfraStatusText.Text = "";
         }
 
         #endregion
@@ -1039,9 +1185,18 @@ namespace Shasta
         {
             while (GetTemperatureHumidity.IsOn)
             {
-                var tempHum = await GetTemperatureAndHumidity();
-                TemperatureText.Text = tempHum.Item1.ToString() + " °C";
-                HumidityText.Text = tempHum.Item2.ToString() + " RH";
+                TempHumStatusText.Text = "";
+                try
+                {
+                    var tempHum = await GetTemperatureAndHumidity();
+                    TemperatureText.Text = tempHum.Item1.ToString() + " °C";
+                    HumidityText.Text = tempHum.Item2.ToString() + " RH";
+                }
+                catch (Exception)
+                {
+                    TempHumStatusText.Text = "Temperature and humidity sensor has error";
+                }
+
                 await Task.Delay(StaticComponents.TempHumSensorDelay);
             }
         }
@@ -1147,6 +1302,95 @@ namespace Shasta
                 TextToRead.Text = text;
             }
         }
+
+        private async Task<bool> PlayYoutube(string youtubeId)
+        {
+            bool status = false;
+            PlayMusicClick.Visibility = Visibility.Collapsed;
+            if (youtubeId != null)
+            {
+                var youtube = YouTube.Default;
+                var videosAudios = await youtube.GetAllVideosAsync("https://www.youtube.com/watch?v=" + youtubeId);
+                foreach (var videoAudio in videosAudios)
+                {
+                    if (videoAudio.AdaptiveKind == AdaptiveKind.Audio & videoAudio.Format == VideoFormat.Mp4)
+                    {
+                        try
+                        {
+                            PlayMusicClick.Content = "";
+                            TextToRead.Text = "Loading " + videoAudio.Title;
+                            var memStream = new MemoryStream();
+                            await videoAudio.Stream().CopyToAsync(memStream);
+                            memStream.Seek(0, SeekOrigin.Begin);
+                            mediaElement.SetSource(memStream.AsRandomAccessStream(), "");
+                            TextToRead.Text = videoAudio.Title;
+                            mediaElement.Play();
+                            status = true;
+                            break;
+                        }
+                        catch (Exception)
+                        {
+                            TextToRead.Text = "Sorry can't play this link";
+                        }
+                    }
+                    else TextToRead.Text = "Sorry can't play this link";
+                }
+            }
+            else TextToRead.Text = "Sorry can't play this link";
+            PlayMusicClick.Visibility = Visibility.Visible;
+            return status;
+        }
+
+        private async void PlayYoutubeMusic(string youtubeId, bool isSearch)
+        {
+            await CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+            async () =>
+            {
+                if (isSearch)
+                {
+                    if (youtubeId.ToLower() == "top trending music")
+                    {
+                        var youtube = await GetYoutubeTrending(10, "GB");
+                        foreach (var item in youtube.items)
+                        {
+                            TextToRead.Text = "Trying " + item.snippet.title;
+                            var isPlaying = await PlayYoutube(item.id);
+                            if (isPlaying) break;
+                        }
+                    }
+                    else
+                    {
+                        var youtube = await GetYoutubeSearch(youtubeId);
+                        foreach (var item in youtube.items)
+                        {
+                            TextToRead.Text = "Trying " + item.snippet.title;
+                            var isPlaying = await PlayYoutube(item.id.videoId);
+                            if (isPlaying) break;
+                        }
+                    }
+                }
+                else await PlayYoutube(youtubeId);
+            });
+        }
+
+        private async void StopMusic()
+        {
+            await CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+            () =>
+            {
+                PlayMusicClick.Content = "";
+                TextToRead.Text = "Stopped music";
+                mediaElement.Stop();
+            });
+        }
+
+        private void PlayMusicClick_Click(object sender, RoutedEventArgs e)
+        {
+            if (PlayMusicClick.Content.ToString() == "")
+                PlayYoutubeMusic("Michael Bublé - I Believe in You", true);
+            else
+                StopMusic();
+        }
         #endregion
 
         // Screen Saver
@@ -1160,6 +1404,15 @@ namespace Shasta
         {
             ScreenSaver.Visibility = Visibility.Visible;
             ContentGrid.Visibility = Visibility.Collapsed;
+        }
+
+        // Reconnect
+        private async void ReconnectLemuria_Click(object sender, RoutedEventArgs e)
+        {
+            ReconnectLemuria.Visibility = Visibility.Collapsed;
+            LemuriaHubStat.Text = "Loading";
+            await Task.Delay(2000);
+            InitHub();
         }
 
         // Common information
@@ -1190,22 +1443,49 @@ namespace Shasta
             return weather;
         }
 
-        private async Task<YoutubeModels> GetYoutubeTrending(int videoCategoryID, string country)
+        private async Task<YoutubeMostPopularModels> GetYoutubeTrending(int videoCategoryID, string country)
         {
-            YoutubeModels youtube = null;
+            YoutubeMostPopularModels youtube = null;
             try
             {
                 using (var client = new HttpClient())
                 {
                     //HTTP get
-                    var url = StaticComponents.YoutubeURL + "&videoCategoryId=" + videoCategoryID + "&regionCode=" + WebUtility.UrlEncode(country) + StaticComponents.YoutubeAPIKey;
+                    var url = StaticComponents.YoutubeMostPopularURL + "&videoCategoryId=" + videoCategoryID + "&regionCode=" + WebUtility.UrlEncode(country) + StaticComponents.YoutubeAPIKey;
                     HttpResponseMessage response = await client.GetAsync(url);
                     response.EnsureSuccessStatusCode();
 
                     if (response.IsSuccessStatusCode)
                     {
                         var jsonString = response.Content.ReadAsStringAsync().Result;
-                        youtube = JsonConvert.DeserializeObject<YoutubeModels>(jsonString);
+                        youtube = JsonConvert.DeserializeObject<YoutubeMostPopularModels>(jsonString);
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                youtube = null;
+            }
+
+            return youtube;
+        }
+
+        private async Task<YoutubeSearchModels> GetYoutubeSearch(string search)
+        {
+            YoutubeSearchModels youtube = null;
+            try
+            {
+                using (var client = new HttpClient())
+                {
+                    //HTTP get
+                    var url = StaticComponents.YoutubeSearchURL + "&q=" + WebUtility.UrlEncode(search) + StaticComponents.YoutubeAPIKey;
+                    HttpResponseMessage response = await client.GetAsync(url);
+                    response.EnsureSuccessStatusCode();
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var jsonString = response.Content.ReadAsStringAsync().Result;
+                        youtube = JsonConvert.DeserializeObject<YoutubeSearchModels>(jsonString);
                     }
                 }
             }

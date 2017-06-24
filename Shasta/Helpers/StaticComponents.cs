@@ -15,12 +15,12 @@ namespace Shasta.Helpers
     class StaticComponents
     {
         // Motor pins
-        public const int ENABLE_L293D_MOTOR_SPEED_A = 13;
-        public const int MOTOR_DIRECTION_FORWARD_A = 5;
-        public const int MOTOR_DIRECTION_BACKWARD_A = 6;
-        public const int ENABLE_L293D_MOTOR_SPEED_B = 12;
-        public const int MOTOR_DIRECTION_FORWARD_B = 22;
-        public const int MOTOR_DIRECTION_BACKWARD_B = 27;
+        public const int ENABLE_L293D_MOTOR_SPEED_A = 12;
+        public const int MOTOR_DIRECTION_FORWARD_A = 22;
+        public const int MOTOR_DIRECTION_BACKWARD_A = 27;
+        public const int ENABLE_L293D_MOTOR_SPEED_B = 13;
+        public const int MOTOR_DIRECTION_FORWARD_B = 5;
+        public const int MOTOR_DIRECTION_BACKWARD_B = 6;
         public const int SONAR_TRIGGER = 23;
         public const int SONAR_ECHO = 24;
         public const int INFRA_1 = 4;
@@ -52,7 +52,7 @@ namespace Shasta.Helpers
 
         // Lemuria Hub
         public static bool IsLemuriaHubConnected { get; set; }
-        public static string LocalWifiHub = "http://192.168.0.81:52232/";
+        public static string LocalWifiHub = "http://192.168.0.95:52232/";
         public static bool IsAuthorised { get; set; }
         public static string UserName { get; set; }
         public static SettingsModels LemuriaSettings { get; set; }
@@ -60,7 +60,7 @@ namespace Shasta.Helpers
         // Timer
         public static  Stopwatch StopWatch = new Stopwatch();
         public const int FloorDetectionSensorDelay = 1000;
-        public const int ObjectAvoidanceSensorDelay = 50;
+        public const int ObjectAvoidanceSensorDelay = 500;
         public const int TempHumSensorDelay = 2000;
 
         // Oxford Face API Primary should be entered here
@@ -75,7 +75,8 @@ namespace Shasta.Helpers
         public const string OpenWeatherAPIKey = "&appid=";
 
         // Youtube API Key
-        public const string YoutubeURL = "https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular";
+        public const string YoutubeMostPopularURL = "https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular";
+        public const string YoutubeSearchURL = "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=15";
         public const string YoutubeAPIKey = "&key=";
     }
 }
