@@ -65,18 +65,22 @@ namespace Shasta.Helpers
 
         // Oxford Face API Primary should be entered here
         // You can obtain a subscription key for Face API by following the instructions here: https://www.microsoft.com/cognitive-services/en-us/sign-up
-        public const string OxfordAPIKey = "";
+        public const string OxfordAPIKey = "3532ca2ce6d34340b58f6246452d2355";
 
         // Name of the folder in which all Whitelist data is stored
         public const string WhiteListFolderName = "Lemuria Whitelist";
 
         // Openweather API Key
         public const string OpenWeatherURL = "http://api.openweathermap.org/data/2.5/weather?units=metric";
-        public const string OpenWeatherAPIKey = "&appid=";
+        public const string OpenWeatherAPIKey = "&appid=cdeb1d5201ad7090ee38519d8f0afc6d";
 
         // Youtube API Key
         public const string YoutubeMostPopularURL = "https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular";
         public const string YoutubeSearchURL = "https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=15";
-        public const string YoutubeAPIKey = "&key=";
+        public const string YoutubeAPIKey = "&key=AIzaSyCIBAKJ6VaFfQpGev1SPHerhx3bVTOY62k";
+
+        // For testing
+        public const bool IsWithoutServer = false;
+        public const bool IsOnWindows = false;
     }
 }

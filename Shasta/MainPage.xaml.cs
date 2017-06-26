@@ -95,9 +95,13 @@ namespace Shasta
             InitHelpers();
             InitOxford();
             UpdateSpeakerStatus();
-            // Uncomment this if you are testing the app as x86
-            // LemuriaHubStat.Text = "Loading";
-            // InitHub();
+
+            //  This if you are testing the app on Windows machices
+            if (StaticComponents.IsOnWindows)
+            {
+                LemuriaHubStat.Text = "Loading";
+                InitHub();
+            }
         }
 
         #region Initialize
@@ -215,32 +219,45 @@ namespace Shasta
         {
             try
             {
-                var hubConnection = new HubConnection(StaticComponents.LocalWifiHub);
-                LemurianHub = hubConnection.CreateHubProxy("LemuriaHub");
-                LemurianHub.On<string, int, int, int, int>("MoveRobot", MoveRobotCallback);
-                LemurianHub.On<int>("SetStartMotorASpeed", SetStartMotorASpeedCallback);
-                LemurianHub.On<int>("SetStartMotorBSpeed", SetStartMotorBSpeedCallback);
-                LemurianHub.On<int>("SetMotorAMaxSpeed", SetMotorAMaxSpeedCallback);
-                LemurianHub.On<int>("SetMotorBMaxSpeed", SetMotorBMaxSpeedCallback);
-                LemurianHub.On<bool>("SetTopLeftIRSensor", SetTopLeftIRSensorCallback);
-                LemurianHub.On<bool>("SetTopRightIRSensor", SetTopRightIRSensorCallback);
-                LemurianHub.On<bool>("SetBottomLeftIRSensor", SetBottomLeftIRSensorCallback);
-                LemurianHub.On<bool>("SetBottomRightIRSensor", SetBottomRightIRSensorCallback);
-                LemurianHub.On<bool>("SetFrontSonarSensor", SetFrontSonarSensorCallback);
-                LemurianHub.On<bool>("SetBackSonarSensor", SetBackSonarSensorCallback);
-                LemurianHub.On<bool>("SetTemperatureHumiditySensor", SetTemperatureHumiditySensorCallback);
-                LemurianHub.On<bool>("SetFaceDetectionCamera", SetFaceDetectionCameraCallback);
-                LemurianHub.On<bool, string, bool>("YoutubeMusic", YoutubeMusicCallback);
-                LemurianHub.On<int>("SetVolume", SetVolumeCallback);
-                LemurianHub.On<string>("SetGreeting", SetGreetingCallback);
-                await hubConnection.Start(new LongPollingTransport());
-
                 // Start the Lemuria
-                StaticComponents.IsLemuriaHubConnected = await LemurianHub.Invoke<bool>("LemurianSignal", "motor");
-                StaticComponents.LemuriaSettings = await LemurianHub.Invoke<SettingsModels>("GetLemurianSettings", "motor");
+                // Enable UI Controllers for shasta without the server
+                var status = "";
+                if (StaticComponents.IsWithoutServer)
+                {
+                    StaticComponents.IsLemuriaHubConnected = true;
+                    StaticComponents.LemuriaSettings = new SettingsModels();
+                    status = "Connected (Test Mode)";
+                }
+                else
+                {
+                    var hubConnection = new HubConnection(StaticComponents.LocalWifiHub);
+                    LemurianHub = hubConnection.CreateHubProxy("LemuriaHub");
+                    LemurianHub.On<string, int, int, int, int>("MoveRobot", MoveRobotCallback);
+                    LemurianHub.On<int>("SetStartMotorASpeed", SetStartMotorASpeedCallback);
+                    LemurianHub.On<int>("SetStartMotorBSpeed", SetStartMotorBSpeedCallback);
+                    LemurianHub.On<int>("SetMotorAMaxSpeed", SetMotorAMaxSpeedCallback);
+                    LemurianHub.On<int>("SetMotorBMaxSpeed", SetMotorBMaxSpeedCallback);
+                    LemurianHub.On<bool>("SetTopLeftIRSensor", SetTopLeftIRSensorCallback);
+                    LemurianHub.On<bool>("SetTopRightIRSensor", SetTopRightIRSensorCallback);
+                    LemurianHub.On<bool>("SetBottomLeftIRSensor", SetBottomLeftIRSensorCallback);
+                    LemurianHub.On<bool>("SetBottomRightIRSensor", SetBottomRightIRSensorCallback);
+                    LemurianHub.On<bool>("SetFrontSonarSensor", SetFrontSonarSensorCallback);
+                    LemurianHub.On<bool>("SetBackSonarSensor", SetBackSonarSensorCallback);
+                    LemurianHub.On<bool>("SetTemperatureHumiditySensor", SetTemperatureHumiditySensorCallback);
+                    LemurianHub.On<bool>("SetFaceDetectionCamera", SetFaceDetectionCameraCallback);
+                    LemurianHub.On<bool, string, bool>("YoutubeMusic", YoutubeMusicCallback);
+                    LemurianHub.On<int>("SetVolume", SetVolumeCallback);
+                    LemurianHub.On<string>("SetGreeting", SetGreetingCallback);
+                    await hubConnection.Start(new LongPollingTransport());
+
+                    StaticComponents.IsLemuriaHubConnected = await LemurianHub.Invoke<bool>("LemurianSignal", "motor");
+                    StaticComponents.LemuriaSettings = await LemurianHub.Invoke<SettingsModels>("GetLemurianSettings", "motor");
+                    status = "Connected";                
+                }
                 InitSettingsAndEvents();
-                LemuriaHubStat.Text = "Connected";
+                LemuriaHubStat.Text = status;
                 LemuriaConnect();
+
                 ReconnectLemuria.Visibility = Visibility.Collapsed;
             }
             catch (Exception)
@@ -1351,21 +1368,27 @@ namespace Shasta
                     if (youtubeId.ToLower() == "top trending music")
                     {
                         var youtube = await GetYoutubeTrending(10, "GB");
-                        foreach (var item in youtube.items)
+                        if (youtube != null)
                         {
-                            TextToRead.Text = "Trying " + item.snippet.title;
-                            var isPlaying = await PlayYoutube(item.id);
-                            if (isPlaying) break;
+                            foreach (var item in youtube.items)
+                            {
+                                TextToRead.Text = "Trying " + item.snippet.title;
+                                var isPlaying = await PlayYoutube(item.id);
+                                if (isPlaying) break;
+                            }
                         }
                     }
                     else
                     {
                         var youtube = await GetYoutubeSearch(youtubeId);
-                        foreach (var item in youtube.items)
+                        if (youtube != null)
                         {
-                            TextToRead.Text = "Trying " + item.snippet.title;
-                            var isPlaying = await PlayYoutube(item.id.videoId);
-                            if (isPlaying) break;
+                            foreach (var item in youtube.items)
+                            {
+                                TextToRead.Text = "Trying " + item.snippet.title;
+                                var isPlaying = await PlayYoutube(item.id.videoId);
+                                if (isPlaying) break;
+                            }
                         }
                     }
                 }

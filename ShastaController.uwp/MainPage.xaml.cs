@@ -597,9 +597,9 @@ namespace ShastaController.uwp
                 {
                     string music = SpeechPreviewText.Text.Replace("play", "");
                     if(music != "top trending music")
-                        SpeechPreviewText.Text = "play \"" + SpeechPreviewText.Text.Trim() + "\"";
+                        SpeechPreviewText.Text = "play \"" + music.Trim() + "\"";
                 }
-                string url = IPAddress + "api/lemuria?connect=" + WebUtility.UrlEncode(SpeechPreviewText.Text);
+                string url = IPAddress + "api/lemuria?message=" + WebUtility.UrlEncode(SpeechPreviewText.Text);
                 SpeechPreviewText.Text = await httpClient.GetStringAsync(url);
             }
         }
