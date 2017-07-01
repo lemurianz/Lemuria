@@ -1087,12 +1087,12 @@ namespace Shasta
                 InfraStatusText.Text = "";
                 if (!HasInfra1Obstacle())
                 {
-                    Infra1Detected.Text = "Obstacle Detected";
+                    Infra1Detected.Text = "Floor Detected";
                     infraUpdate.InfraBottomLeft = true;
                 }
                 else
                 {
-                    Infra1Detected.Text = "No Obstacle";
+                    Infra1Detected.Text = "No Floor";
                     infraUpdate.InfraBottomLeft = false;
                 }
 
@@ -1108,12 +1108,12 @@ namespace Shasta
                 InfraStatusText.Text = "";
                 if (!HasInfra2Obstacle())
                 {
-                    Infra2Detected.Text = "Obstacle Detected";
+                    Infra2Detected.Text = "Floor Detected";
                     infraUpdate.InfraTopLeft = true;
                 }
                 else
                 {
-                    Infra2Detected.Text = "No Obstacle";
+                    Infra2Detected.Text = "No Floor";
                     infraUpdate.InfraTopLeft = false;
                 }
 
@@ -1129,12 +1129,12 @@ namespace Shasta
                 InfraStatusText.Text = "";
                 if (!HasInfra3Obstacle())
                 {
-                    Infra3Detected.Text = "Obstacle Detected";
+                    Infra3Detected.Text = "Floor Detected";
                     infraUpdate.InfraBottomRight = true;
                 }
                 else
                 {
-                    Infra3Detected.Text = "No Obstacle";
+                    Infra3Detected.Text = "No Floor";
                     infraUpdate.InfraBottomRight = false;
                 }
 
@@ -1150,12 +1150,12 @@ namespace Shasta
                 InfraStatusText.Text = "";
                 if (!HasInfra4Obstacle())
                 {
-                    Infra4Detected.Text = "Obstacle Detected";
+                    Infra4Detected.Text = "Floor Detected";
                     infraUpdate.InfraTopRight = true;
                 }
                 else
                 {
-                    Infra4Detected.Text = "No Obstacle";
+                    Infra4Detected.Text = "No Floor";
                     infraUpdate.InfraTopRight = false;
                 }
 

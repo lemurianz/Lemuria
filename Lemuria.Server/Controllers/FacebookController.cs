@@ -87,6 +87,7 @@ namespace Lemuria.Server.Controllers
             return hashString.ToString().ToLower() == signature.ToLower();
         }
 
+
         /// <summary>
 		/// get text message template
 		/// </summary>
