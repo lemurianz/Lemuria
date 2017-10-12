@@ -21,9 +21,9 @@ namespace Lemuria.Server.Controllers
         {
             if (speechService == null)
             {
-                speechService = new SpeechServices();
-                if (!speechService.HasInitialized)
-                    speechService.GetMessageReplies(); // Leave it async
+                //speechService = new SpeechServices();
+                //if (!speechService.HasInitialized)
+                //    speechService.GetAllJsonData(); // Leave it async
             }
         }
 

@@ -235,6 +235,7 @@
     <Compile Include="Models\IdentityModels.cs" />
     <Compile Include="Models\LemuriaModels.cs" />
     <Compile Include="Models\MessageReplyModels.cs" />
+    <Compile Include="Models\MeVitaeNLPMappingModels.cs" />
     <Compile Include="Models\MotorSpeedModels.cs" />
     <Compile Include="Models\SettingsModels.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -275,6 +276,7 @@
     <Content Include="Data\MessageReplies.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="Data\NLPMapping.json" />
     <None Include="Scripts\jquery-3.1.1.intellisense.js" />
     <Content Include="Scripts\jquery-3.1.1.js" />
     <Content Include="Scripts\jquery-3.1.1.min.js" />

@@ -17,16 +17,18 @@ namespace Lemuria.Server.Services
     public class SpeechServices
     {
         public List<MessageReplyModels> MessageReplies { get; set; }
+        public List<MeVitaeNLPMappingModels> mevitaeNLPMappingModels { get; set; }
         public bool HasInitialized = false;
         public string _INT = "{int}", _STR = "{str}";
+
         public LemuriaHub LemurianHub { get; set; }
         public static bool MovementStatus { get; set; }
         public static bool MoveLoopBreak { get; set; }
         public static Timer MovementTimer { get; set; }
 
-        public SpeechServices()
+        public SpeechServices(IDependencyResolver Resolver)
         {
-            DefaultHubManager LemurianResolver = new DefaultHubManager(GlobalHost.DependencyResolver);
+            DefaultHubManager LemurianResolver = new DefaultHubManager(Resolver);
             LemurianHub = LemurianResolver.ResolveHub("LemuriaHub") as LemuriaHub;
             LemurianHub.LemurianSignal("messenger");
             if (MovementTimer == null)
@@ -37,10 +39,13 @@ namespace Lemuria.Server.Services
             }
         }
 
-        public async Task<bool> GetMessageReplies()
+        public async Task<bool> GetAllJsonData()
         {
             using (StreamReader sr = new StreamReader(System.Web.HttpContext.Current.Server.MapPath("~/Data/MessageReplies.json")))
                 MessageReplies = JsonConvert.DeserializeObject<List<MessageReplyModels>>(await sr.ReadToEndAsync());
+
+            using (StreamReader sr = new StreamReader(System.Web.HttpContext.Current.Server.MapPath("~/Data/NLPMapping.json")))
+                mevitaeNLPMappingModels = JsonConvert.DeserializeObject<List<MeVitaeNLPMappingModels>>(await sr.ReadToEndAsync());
 
             HasInitialized = true;
 
@@ -154,6 +159,41 @@ namespace Lemuria.Server.Services
             return returnMessage;
         }
 
+        // Load functions
+        private string LoadTextCommands(string returnMessage, MessageReplyModels messageReply, Match m, string key)
+        {
+            var type = messageReply.Methods[key][0];
+            var text = messageReply.Methods[key][1];
+            if (text == _STR)
+            {
+                text = m.Groups[2].Value;
+                returnMessage = returnMessage.Replace(_STR, text);
+            }
+
+            // Sort out the mapping
+            if(type == "Analyse")
+            {
+                var foundWord = false;
+                foreach (var item in mevitaeNLPMappingModels)
+                {
+                    if (foundWord) break;
+
+                    foreach (var word in item.Words)
+                    {
+                        if (word == text.ToLower())
+                        {
+                            text = item.Version1;
+                            foundWord = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            LemurianHub.LemurianLoadText(type, text);
+            return returnMessage;
+        }
+
         // Greeting functions
         private string GreetingCommands(string returnMessage, MessageReplyModels messageReply, string key)
         {
@@ -184,6 +224,10 @@ namespace Lemuria.Server.Services
                     // Volume
                     else if (key == "Volume")
                         returnMessage = VolumeCommands(returnMessage, messageReply, m, key);
+
+                    // LoadText
+                    else if (key == "LoadText")
+                        returnMessage = LoadTextCommands(returnMessage, messageReply, m, key);
 
                     // Greeting
                     else if (key == "Greetings")

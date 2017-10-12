@@ -19,17 +19,17 @@ namespace Lemuria.Server.Controllers
     {
         // Run this in command prompt to enable tunnel your localport
         // ngrok http -host-header="localhost:52232" 52232
-        string pageToken = "";
-        string appSecret = "";
+        string pageToken = "EAAKBuq2WMowBAJQ8dxzX9R2i6ZA7gOZB09YkRld9EuNt7bdOlW2wrHMizWZBA7HXhoZBvCsZBsZAqxP0sA7kszYOB9N5ZCSaC9UDVPGcvBPcS8IzPhdOT9AfEg0g9ZAxdpKnU2PhEbZCouymOPqgBr3LAClmGzVxPscW5GkB75C0rrwZDZD";
+        string appSecret = "12e30a3914d097d32adf96c5d06b0772";
         static SpeechServices speechService;
 
         private void InitializeShastaSpeech()
         {
             if (speechService == null)
             {
-                speechService = new SpeechServices();
-                if (!speechService.HasInitialized)
-                    speechService.GetMessageReplies(); // Leave it async
+            //    speechService = new SpeechServices();
+            //    if (!speechService.HasInitialized)
+            //        speechService.GetAllJsonData(); // Leave it async
             }
         }
 
@@ -110,7 +110,7 @@ namespace Lemuria.Server.Controllers
         private async Task SendMessage(JObject json)
         {
             //Facebook ID of the user
-            if ((string)json["recipient"]["id"] == "")
+            if ((string)json["recipient"]["id"] == "1550590418306490")
             {
                 var message = (string)json["message"]["text"];
                 // Incase it is not initialized

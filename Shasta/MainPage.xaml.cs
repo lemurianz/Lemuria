@@ -247,6 +247,7 @@ namespace Shasta
                     LemurianHub.On<bool>("SetFaceDetectionCamera", SetFaceDetectionCameraCallback);
                     LemurianHub.On<bool, string, bool>("YoutubeMusic", YoutubeMusicCallback);
                     LemurianHub.On<int>("SetVolume", SetVolumeCallback);
+                    LemurianHub.On<string, string>("SetLoadText", SetLoadTextCallback);
                     LemurianHub.On<string>("SetGreeting", SetGreetingCallback);
                     await hubConnection.Start(new LongPollingTransport());
 
@@ -260,8 +261,9 @@ namespace Shasta
 
                 ReconnectLemuria.Visibility = Visibility.Collapsed;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                var x = ex;
                 StaticComponents.IsLemuriaHubConnected = false;
                 LemuriaHubStat.Text = "Not Connected";
                 ReconnectLemuria.Visibility = Visibility.Visible;
@@ -429,6 +431,22 @@ namespace Shasta
             {
                 SpeakVolume.Value = volume;
             });
+        }
+
+        // Load Text
+        private async void SetLoadTextCallback(string type, string text)
+        {
+            if (type.ToLower() == "load")
+                StaticComponents.LoadText = text;
+            else
+            {
+                var nlpstring = await GetNLPGroup(text);
+                await CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+                () =>
+                {
+                    ReadText(nlpstring, false);
+                });            
+            }
         }
 
         // Greeting 
@@ -1257,21 +1275,25 @@ namespace Shasta
         private async void UpdateSpeakerStatus()
         {
             var id = MediaDevice.GetDefaultAudioRenderId(AudioDeviceRole.Communications);
-            if (!string.IsNullOrEmpty(id))
-            {
-                var deviceInfo = await DeviceInformation.CreateFromIdAsync(id);
-                ReadingStatus.Text = deviceInfo.Name;
-                ReadClick.IsEnabled = true;
-                SpeakVolume.Visibility = Visibility.Visible;
-                mediaElement.Volume = 0.30;
-                SpeakVolume.Value = mediaElement.Volume * 100;
-            }
-            else
-            {
-                ReadClick.IsEnabled = false;
-                SpeakVolume.Visibility = Visibility.Collapsed;
-                ReadingStatus.Text = "No audio device detected";
-            }
+            var deviceInfo = await DeviceInformation.CreateFromIdAsync(id);
+            await CoreApplication.MainView.CoreWindow.Dispatcher.RunAsync(CoreDispatcherPriority.Normal,
+                () =>
+                {
+                    if (!string.IsNullOrEmpty(id))
+                    {
+                        ReadingStatus.Text = deviceInfo.Name;
+                        ReadClick.IsEnabled = true;
+                        SpeakVolume.Visibility = Visibility.Visible;
+                        mediaElement.Volume = 0.30;
+                        SpeakVolume.Value = mediaElement.Volume * 100;
+                    }
+                    else
+                    {
+                        ReadClick.IsEnabled = false;
+                        SpeakVolume.Visibility = Visibility.Collapsed;
+                        ReadingStatus.Text = "No audio device detected";
+                    }
+                });
         }
 
         private void SpeakVolume_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
@@ -1518,6 +1540,65 @@ namespace Shasta
             }
 
             return youtube;
+        }
+
+        private async Task<bool> PostNLPText()
+        {
+            bool hasPosted = false;
+            try
+            {
+                if (!string.IsNullOrEmpty(StaticComponents.LoadText))
+                {
+                    using (var client = new HttpClient())
+                    {
+                        //HTTP get
+                        var url = StaticComponents.MeVitaeNLPLink + "xml/" + StaticComponents.LoadText;
+                        HttpResponseMessage response = await client.GetAsync(url);
+                        response.EnsureSuccessStatusCode();
+
+                        if (response.IsSuccessStatusCode)
+                        {
+                            var jsonString = response.Content.ReadAsStringAsync().Result;
+                            hasPosted = true;
+                        }
+                    }
+                }
+                else hasPosted = false;
+            }
+            catch (Exception)
+            {
+                hasPosted = false;
+            }
+
+            return hasPosted;
+        }
+
+        private async Task<string> GetNLPGroup(string name)
+        {
+            string analysis = null;
+            try
+            {
+                if (await PostNLPText())
+                {
+                    using (var client = new HttpClient())
+                    {
+                        //HTTP get
+                        var url = StaticComponents.MeVitaeNLPLink + WebUtility.UrlEncode(name);
+                        HttpResponseMessage response = await client.GetAsync(url);
+                        response.EnsureSuccessStatusCode();
+
+                        if (response.IsSuccessStatusCode)
+                            analysis = response.Content.ReadAsStringAsync().Result;
+                    }
+                }
+                else analysis = "Sorry something went wrong";
+            }
+            catch (Exception)
+            {
+                analysis = "Sorry something went wrong";
+            }
+
+            return analysis;
         }
     }
 }

@@ -44,7 +44,7 @@ namespace ShastaController.uwp
         public IHubProxy LemurianHub { get; set; }
         public MotorSpeedModels speed { get; set; }
         public int PivotSize { get; set; }
-        public string IPAddress = "http://192.168.0.95:52232/";
+        public static string IPAddress = "https://19af16e8.ngrok.io";
         int previousKey = -1;
         #endregion
 
@@ -82,6 +82,7 @@ namespace ShastaController.uwp
             var hasConnected = false;
             try
             {
+                IPAddress = ip;
                 var hubConnection = new HubConnection(ip);
                 LemurianHub = hubConnection.CreateHubProxy("LemuriaHub");
                 LemurianHub.On<bool>("NotifyTopLeftIR", NotifyTopLeftIRCallback);
@@ -181,6 +182,7 @@ namespace ShastaController.uwp
             var ip = "";
             if (IPAddressText.Text == "" || IPAddressText.Text == "default")
                 ip = IPAddress;
+            else ip = IPAddressText.Text;
             ConnectStatusText.Text = "Loading...";
             if (await TryConnectToLemuria(ip))
             {

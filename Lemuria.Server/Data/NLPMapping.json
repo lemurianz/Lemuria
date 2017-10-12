@@ -1,0 +1,12 @@
+﻿[
+  {
+    "Words": [ "computer science", "com" ],
+    "Version1": "COM",
+    "Version2": "computer_science"
+  },
+  {
+    "Words": [ "physics", "phy" ],
+    "Version1": "PHY",
+    "Version2": "physics"
+  }
+]

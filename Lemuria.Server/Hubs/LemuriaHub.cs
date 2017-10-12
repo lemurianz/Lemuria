@@ -77,6 +77,16 @@ namespace Lemuria.Server.Hubs
                 LemurianHubContext.Clients.Client(motorId).SetVolume(volume);
         }
 
+        public void LemurianLoadText(string type, string text)
+        {
+            // only get movement controls from the master controller and 
+            // send the navigation info only to the motor
+            var masterId = SignalRClients["master"];
+            var motorId = SignalRClients["motor"];
+            if (ControllerMotorPass())
+                LemurianHubContext.Clients.Client(motorId).SetLoadText(type, text);
+        }
+
         public void LemurianGreeting(string greeting)
         {
             // only get movement controls from the master controller and 
