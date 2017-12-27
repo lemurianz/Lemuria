@@ -15,6 +15,8 @@ using Windows.ApplicationModel.Core;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.Media.SpeechRecognition;
+using Windows.Networking;
+using Windows.Networking.Connectivity;
 using Windows.Storage;
 using Windows.UI;
 using Windows.UI.Core;
@@ -44,7 +46,8 @@ namespace ShastaController.uwp
         public IHubProxy LemurianHub { get; set; }
         public MotorSpeedModels speed { get; set; }
         public int PivotSize { get; set; }
-        public static string IPAddress = "https://19af16e8.ngrok.io";
+        public static string IPAddress = "";
+        public static string LemurianServerPort = "37070";
         int previousKey = -1;
         #endregion
 
@@ -175,6 +178,45 @@ namespace ShastaController.uwp
                     HumidityTextblock.Text = "Humidity";
                 else HumidityTextblock.Text = value2.ToString() + " RH";
             }).AsTask();
+        }
+
+        private async Task<string> AutoDetectServer()
+        {
+            string ipString = "";
+
+            foreach (HostName localHostName in NetworkInformation.GetHostNames())
+            {
+                if (localHostName.IPInformation != null)
+                {
+                    if (localHostName.Type == HostNameType.Ipv4)
+                    {
+                        try
+                        {
+                            using (var httpClient = new HttpClient())
+                            {
+                                string serverUrl = "http://" + localHostName.CanonicalName.ToString() + ":" + LemurianServerPort;
+                                var serverString = await httpClient.GetStringAsync(serverUrl + "/api/values/1");
+                                if (serverString == "Lemurian Server")
+                                {
+                                    return serverUrl;
+                                }
+
+                            }
+                        }
+                        catch (Exception)
+                        {
+                        }
+
+                    }
+                }
+            }
+
+            return ipString;
+        }
+
+        private async void AutoDetectServerUrl_Click(object sender, RoutedEventArgs e)
+        {
+            IPAddressText.Text = await AutoDetectServer();
         }
 
         private async void ConnectButton_Click(object sender, RoutedEventArgs e)
@@ -778,5 +820,7 @@ namespace ShastaController.uwp
             await LemurianHub.Invoke<bool>("SetMaxMotorASpeed", (int)e.NewValue);
         }
         #endregion
+
+
     }
 }

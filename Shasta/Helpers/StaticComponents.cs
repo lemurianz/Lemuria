@@ -52,7 +52,8 @@ namespace Shasta.Helpers
 
         // Lemuria Hub
         public static bool IsLemuriaHubConnected { get; set; }
-        public static string LocalWifiHub = "https://c6866ac9.ngrok.io";
+        public static string LemurianServerPort = "37070";
+        public static string LocalWifiHub = "";
         public static bool IsAuthorised { get; set; }
         public static string UserName { get; set; }
         public static SettingsModels LemuriaSettings { get; set; }
@@ -72,7 +73,7 @@ namespace Shasta.Helpers
 
         // Openweather API Key
         public const string OpenWeatherURL = "http://api.openweathermap.org/data/2.5/weather?units=metric";
-        public const string OpenWeatherAPIKey = "&appid=cdeb1d5201ad7090ee38519d8f0afc6d";
+        public const string OpenWeatherAPIKey = "&appid=c8e97019574d083755606122c6596a91";
 
 
         // Youtube API Key
@@ -87,6 +88,6 @@ namespace Shasta.Helpers
 
         // For testing
         public const bool IsWithoutServer = false;
-        public const bool IsOnWindows = false;
+        public const bool IsOnWindows = true;
     }
 }

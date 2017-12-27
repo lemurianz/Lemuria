@@ -16,6 +16,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.NetworkInformation;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using VideoLibrary;
@@ -28,6 +29,8 @@ using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.Media.Devices;
 using Windows.Media.SpeechSynthesis;
+using Windows.Networking;
+using Windows.Networking.Connectivity;
 using Windows.Storage;
 using Windows.UI;
 using Windows.UI.Core;
@@ -215,7 +218,41 @@ namespace Shasta
             GetTemperatureHumidity.IsOn = StaticComponents.LemuriaSettings.InternalTempAndHum;
         }
 
-        private async void InitHub()
+        private async Task<string> AutoDetectServer()
+        {
+            string ipString = "";
+
+            foreach (HostName localHostName in NetworkInformation.GetHostNames())
+            {
+                if (localHostName.IPInformation != null)
+                {
+                    if (localHostName.Type == HostNameType.Ipv4)
+                    {
+                        try
+                        {
+                            using (var httpClient = new HttpClient())
+                            {
+                                string serverUrl = "http://" + localHostName.CanonicalName.ToString() + ":" + StaticComponents.LemurianServerPort;
+                                var serverString = await httpClient.GetStringAsync(serverUrl + "/api/values/1");
+                                if (serverString == "Lemurian Server")
+                                {
+                                    return serverUrl;
+                                }
+
+                            }
+                        }
+                        catch (Exception)
+                        {
+                        }
+
+                    }
+                }
+            }
+
+            return ipString;
+        }
+
+        private async Task InitHub()
         {
             try
             {
@@ -258,15 +295,12 @@ namespace Shasta
                 InitSettingsAndEvents();
                 LemuriaHubStat.Text = status;
                 LemuriaConnect();
-
-                ReconnectLemuria.Visibility = Visibility.Collapsed;
             }
             catch (Exception ex)
             {
                 var x = ex;
                 StaticComponents.IsLemuriaHubConnected = false;
                 LemuriaHubStat.Text = "Not Connected";
-                ReconnectLemuria.Visibility = Visibility.Visible;
             }
         }
 
@@ -1457,7 +1491,10 @@ namespace Shasta
             ReconnectLemuria.Visibility = Visibility.Collapsed;
             LemuriaHubStat.Text = "Loading";
             await Task.Delay(2000);
-            InitHub();
+            StaticComponents.LocalWifiHub = ServerUrlText.Text;
+            await InitHub();
+
+            ReconnectLemuria.Visibility = Visibility.Visible;
         }
 
         // Common information
@@ -1599,6 +1636,11 @@ namespace Shasta
             }
 
             return analysis;
+        }
+
+        private async void AutoDetectServerUrl_Click(object sender, RoutedEventArgs e)
+        {
+            ServerUrlText.Text = await AutoDetectServer();
         }
     }
 }
