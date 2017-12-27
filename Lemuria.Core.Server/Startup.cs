@@ -47,6 +47,7 @@ namespace Lemuria.Core.Server
             app.UseCors("AllowAll");
             app.UseMvc();
             app.UseSignalR();
+            
 
             _ConnectionManager = serviceProvider.GetService<IConnectionManager>();
 
